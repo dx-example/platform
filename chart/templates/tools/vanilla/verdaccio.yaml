@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: verdaccio
+  annotations:
+    "helm.sh/hook-weight": "-5"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: verdaccio
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: verdaccio
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: verdaccio
+    repoURL: https://github.com/moonpod/helm-charts.git
+    helm:
+      values: |
+        persistence:
+          storageClass: longhorn
+          size: 4Gi
+        secrets:
+          htpasswd:
+            - username: "verdaccio"
+              password: "verdaccio"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true

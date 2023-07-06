@@ -1,0 +1,8 @@
+apiVersion: v2
+name: platform
+description: A helm chart for installing the GitOps pattern built for the dx-book training workshop
+type: application
+home: https://github.com/dx-book/platform
+version: 1.0.0
+maintainers:
+  - name: mvmaestri

@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: chart-museum
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ include "namespace" . }}
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: chartmuseum
+    repoURL: https://github.com/moonpod/helm-charts.git
+    helm:
+      values: |
+        fullnameOverride: chartmuseum
+        service:
+          servicename: chartmuseum
+        env:
+          open:
+            DISABLE_API: false
+            ALLOW_OVERWRITE: true
+            STORAGE: amazon
+            STORAGE_AMAZON_BUCKET: moonpod-charts
+            STORAGE_AMAZON_PREFIX:
+            STORAGE_AMAZON_REGION: us-east-1
+          secret:
+            AWS_ACCESS_KEY_ID: AKIAUICYRSPXZSMCPWWJ
+            AWS_SECRET_ACCESS_KEY: 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
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
