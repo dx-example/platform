@@ -15,7 +15,7 @@ spec:
   project: default
   source:
     path: applications
-    repoURL: https://github.com/dx-bok/environments
+    repoURL: https://github.com/dx-book/environments
     targetRevision: main
   syncPolicy:
     automated:
