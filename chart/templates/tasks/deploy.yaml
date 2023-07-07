@@ -1,0 +1,168 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy
+  namespace: tekton-tasks
+spec:
+  description: This task updates App Config repository with new image to deploy the newly built image.
+  params:
+    - name: config_repo
+      description: app-of-apps repository url
+      type: string
+    - name: project_name
+      description: Application name
+      type: string
+    - name: application_name
+      description: Application name
+      type: string
+    - name: version
+      description: Application version
+      type: string
+    - name: chart_version
+      description: Application Helm Chart version
+      type: string
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ''
+      type: string
+    - name: revision_type
+      description: type of branch
+    - name: truncated_sha
+      description: revision commit id
+  results:
+    - name: previous_chart_version
+      description: Version of currently applied chart
+    - name: previous_version
+      description: Version of currently running app
+  steps:
+    - name: version-bump
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      script: |
+        #!/bin/sh
+        if [ "$(params.revision_type)" = "main" ]; then
+          
+          echo "👉🏻 Cloning gitops repo"
+          git clone $(params.config_repo)
+
+          ls -ls gitops/app-config/applications
+
+          git config --global user.name "Tekton Pipeline"
+          git config --global user.email "tekton@moonpod.app"
+          git config --global push.default simple
+
+          cd gitops/app-config/applications
+          curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
+
+          previous_chart_version=$(./yq '.deployment.chart' $(params.project_name)/$(params.application_name).yaml)
+          previous_version=$(./yq '.deployment.values.image.version' $(params.project_name)/$(params.application_name).yaml)
+
+          echo "👉🏻 Get versions"
+          echo "Chart: $previous_chart_version"
+          echo "Application: $previous_version"
+
+          export CHART=$previous_chart_version
+          export VERSION=$(params.version)
+          export REVISION=$(params.truncated_sha)
+          
+          echo "👉🏻 Replace old version with updated on"
+          ./yq e -i ".deployment.chart = env(CHART)" $(params.project_name)/$(params.application_name).yaml
+          ./yq e -i ".deployment.values.image.version = env(VERSION)" $(params.project_name)/$(params.application_name).yaml
+          ./yq e -i ".deployment.values.image.revision = env(REVISION)" $(params.project_name)/$(params.application_name).yaml
+
+          echo "👉🏻 Updated file"
+          cat $(params.project_name)/$(params.application_name).yaml
+
+          echo "👉🏻 Pushing to repo"
+          git commit -am "👉🏻 Automated commit - Deployment of $(params.project_name)/$(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
+          git push
+
+          echo -n $previous_version | tee $(results.previous_version.path)
+          echo -n $(params.revision_type) | tee $(results.previous_chart_version.path)
+
+        else
+          echo "Skipped due to non-main branch"
+          echo -n "" | tee $(results.previous_version.path)
+          echo -n "" | tee $(results.previous_chart_version.path)
+        fi
+
+    - name: argocd-create-application
+      image: bitnami/kubectl
+      script: |
+        #!/bin/sh
+        if [ "$(params.revision_type)" != "main" ]; then
+          # todo: refactor, not pretty
+          cd /tmp
+          touch application.yaml
+          echo "apiVersion: argoproj.io/v1alpha1" >> application.yaml
+          echo "kind: Application" >> application.yaml
+          echo "metadata:" >> application.yaml
+          echo "  name: $(params.application_name)-$(params.revision_type)" >> application.yaml
+          echo "  namespace: argocd" >> application.yaml
+          echo "spec:" >> application.yaml
+          echo "  destination:" >> application.yaml
+          echo "    namespace: $(params.project_name)-development" >> application.yaml
+          echo "    server: https://kubernetes.default.svc" >> application.yaml
+          echo "  project: default" >> application.yaml
+          echo "  source:" >> application.yaml
+          echo "    path: chart" >> application.yaml
+          echo "    repoURL: https://github.com/$(params.project_name)/$(params.application_name)" >> application.yaml
+          echo "    targetRevision: $(params.revision_type)" >> application.yaml
+          echo "    helm:" >> application.yaml
+          echo "      releaseName: $(params.application_name)-$(params.revision_type)" >> application.yaml
+          echo "      values: | " >> application.yaml
+          echo "        revision: $(params.revision_type)" >> application.yaml
+          echo "        image:" >> application.yaml
+          echo "          version: $(params.revision_type)" >> application.yaml
+
+          echo "        environment:" >> application.yaml
+          echo "          test:" >> application.yaml
+          echo "            enabled: true" >> application.yaml
+          echo "        mongodb:" >> application.yaml
+          echo "          architecture: standalone" >> application.yaml
+          echo "          global:" >> application.yaml
+          echo "            namespaceOverride: $(params.project_name)-development" >> application.yaml
+          echo "          persistence:" >> application.yaml
+          echo "            enabled: false" >> application.yaml
+          echo "          auth:" >> application.yaml
+          echo "            enabled: false" >> application.yaml
+
+          echo "  syncPolicy:" >> application.yaml
+          echo "    automated:" >> application.yaml
+          echo "      prune: true" >> application.yaml
+          echo "      selfHeal: true" >> application.yaml
+          echo "    syncOptions:" >> application.yaml
+          echo "      - Validate=true" >> application.yaml
+
+          cat application.yaml
+          kubectl apply -f application.yaml
+        fi
+
+    - name: rollout
+      image: bitnami/kubectl
+      script: |
+        #!/bin/sh
+        if [ "$(params.revision_type)" = "main" ]; then
+          kubectl set env deployment/$(params.application_name) REVISION=$(params.truncated_sha) -n $(params.project_name)-development
+          kubectl patch app/$(params.application_name) -n argocd --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
+          # kubectl rollout restart deployment/$(params.application_name) -n $(params.project_name)-development
+        fi
+
+    # - name: refresh
+    #   image: registry.access.redhat.com/ubi8/nodejs-16
+    #   script: |
+    #     #!/bin/sh
+    #     curl -Lsk https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 -o argocd && chmod +x argocd
+    #     curl -Lsk https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl -o kubectl && chmod +x kubectl
+
+    #     ./argocd login \
+    #       --insecure \
+    #       --username admin \
+    #       --password Lf9XWaRqSyJCZG-t \
+    #       --skip-test-tls \
+    #       --grpc-web \
+    #       --core \
+    #       argocd-server.argocd.svc.cluster.local
+        
+    #     ./kubectl config set-context argocd --namespace=argocd
+    #     ./kubectl config use-context argocd
+    #     ./argocd app get $(params.application_name) --hard-refresh

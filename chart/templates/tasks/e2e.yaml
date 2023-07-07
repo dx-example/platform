@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: e2e
+  namespace: tekton-tasks
+spec:
+  description: This task run the previous built image for testing
+  params:
+    - name: application_name
+      description: application name
+      type: string
+    - name: version
+      description: application version
+      type: string
+  steps:
+    - name: run
+      image: 292243477487.dkr.ecr.us-east-1.amazonaws.com/$(params.application_name):test-$(params.version)
+      imagePullPolicy: Always
+      script: |
+        #!/bin/sh
+        echo "test"
+        ls -Ls
+        date
+        ./entrypoint-k8s.sh

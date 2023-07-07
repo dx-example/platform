@@ -1,0 +1,55 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: identify
+  namespace: tekton-tasks
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  description: Identifies runtime, extracts the version number and stores it in result.
+  params:
+  - description: revision type
+    name: revision_type
+    type: string
+  - default: ""
+    description: Subdirectory inside the `source` Workspace
+    name: subdirectory
+    type: string
+  results:
+  - name: version
+    description: parsed version from manifest files
+  - name: runtime
+    description: detected runtime
+  workspaces:
+    - name: source
+      description: Workspace where source is cloned to.
+  steps:
+
+    - name: detect-version
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      image: registry.access.redhat.com/ubi8/toolbox:8.5
+      script: |
+        #!/bin/sh
+        echo "Detected branch type: $(params.revision_type)"
+        package=package.json
+        runtime=undefined
+        if [ -f $package ]; then
+            runtime=nodejs
+        else
+            echo "Missing package.json"
+        fi
+
+        if [ "$runtime" = "nodejs" ]; then
+          version=$(cat $package \
+          | grep version \
+          | head -1 \
+          | awk -F: '{ print $2 }' \
+          | sed 's/[",]//g')
+
+          version=$(echo -e $version)
+        fi
+
+        echo "Detected runtime: $runtime"
+        echo "Detected version: $version"
+        printf %s "$version" >> /tekton/results/version
+        printf %s "$runtime" >> /tekton/results/runtime

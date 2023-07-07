@@ -1,0 +1,77 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: image-build
+  namespace: tekton-tasks
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  description: This task is used for building container images based on your Dockerfile and artifacts 
+  params:
+    - name: application_name
+      description: Name of the application
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ''
+      type: string
+    - name: version
+      description: version of the application
+    - name: image_registry
+      description: Image Registry URL
+      default: 292243477487.dkr.ecr.us-east-1.amazonaws.com
+    - name: image_repo
+      description: Image Repository
+    - name: push_secret
+      description: Secret containing credentials for registry
+      type: string
+    - name: revision_type
+      description: type of branch, main or non main
+      type: string
+  workspaces:
+    - name: source
+      description: Workspace where source is cloned to.
+  steps:
+    - name: image-build
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      image: quay.io/openshift/origin-cli:4.8
+      script: |
+        #!/bin/sh
+
+        if [ "$(params.revision_type)" = "main" ]; then
+          echo Version: $(params.version)
+          version=$(params.version)
+          version=${version//./-}
+          echo Version: $version
+          oc new-build --binary --name=$(params.application_name)-$version --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.version) --to-docker=true --push-secret=$(params.push_secret)
+          # oc new-build --binary --name=$(params.application_name)-$version --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.version) --to-docker=true
+          # oc new-build --binary --name=$(params.application_name)-$version
+          oc start-build $(params.application_name)-$version --from-dir=. --follow --wait
+        else
+          echo Version: $(params.revision_type)
+          oc new-build --binary --name=$(params.application_name)-$(params.revision_type) --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.revision_type) --to-docker=true --push-secret=$(params.push_secret)
+          # oc new-build --binary --name=$(params.application_name)-$(params.revision_type)
+          oc start-build $(params.application_name)-$(params.revision_type) --from-dir=. --follow --wait
+        fi
+        
+    # - name: image-build
+    #   workingDir: $(workspaces.source.path)/$(params.subdirectory)
+    #   image: quay.io/openshift/origin-cli:4.8
+    #   script: |
+    #     #!/bin/sh
+
+    #     if [ "$(params.revision_type)" = "main" ]; then
+    #       echo Version: $(params.version)
+    #       version=$(params.version)
+    #       version=${version//./-}
+    #       echo Version: $version
+    #       oc new-build --binary --name=$(params.application_name)-$version --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.version) --to-docker=true --push-secret=$(params.push_secret)
+    #       # oc new-build --binary --name=$(params.application_name)-$version --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.version) --to-docker=true
+    #       # oc new-build --binary --name=$(params.application_name)-$version
+    #       oc start-build $(params.application_name)-$version --from-dir=. --follow --wait
+    #     else
+    #       echo Version: $(params.revision_type)
+    #       oc new-build --binary --name=$(params.application_name)-$(params.revision_type) --to=$(params.image_registry)/$(params.image_repo)/$(params.application_name):$(params.revision_type) --to-docker=true --push-secret=$(params.push_secret)
+    #       # oc new-build --binary --name=$(params.application_name)-$(params.revision_type)
+    #       oc start-build $(params.application_name)-$(params.revision_type) --from-dir=. --follow --wait
+    #     fi
+        

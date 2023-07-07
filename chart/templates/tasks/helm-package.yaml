@@ -1,0 +1,92 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helm-package
+  namespace: tekton-tasks
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: build-tool
+spec:
+  description: >
+    This Task lints the helm chart to verify it is well-formatted, packages it up and stores in Nexus Helm Chart Repository. It supports two distinct paths, either for main branch deployment or non-main branch deployment. For main, it uses a name-1.0.0.tgz format. For non-main it uses name-[feature-name].tgz
+  workspaces:
+    - name: source
+      description: Workspace where source is cloned to.
+  params:
+    - name: application_name
+      description: Name of the application
+    - name: chart_repo
+      description: "Helm Chart Repo"
+      default: "http://chartmuseum.tools.svc.cluster.local:8080/api/charts"
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ''
+      type: string
+    - name: revision_type
+      description: type of branch, either main or non main
+      type: string
+    - name: truncated_sha
+      description: revision commit id
+      type: string
+      default: ''
+  results:
+    - name: chart_version
+      description: Version of the helm chart
+  steps:
+    - name: release-helm-chart
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      script: |
+        #!/bin/sh
+
+        curl -Lsk https://mirror.openshift.com/pub/openshift-v4/clients/helm/latest/helm-linux-amd64 -o helm && chmod +x helm
+        curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
+
+        echo -e "👉🏻 Tracking revision (via appVersion in Chart.yaml)"
+        export SHA=$(params.truncated_sha)
+        ./yq e -i ".appVersion = env(SHA)" chart/Chart.yaml
+        cat chart/Chart.yaml
+          
+        
+        # if not main branch, set test as true
+        if [ "$(params.revision_type)" != "main" ]; then
+          echo "👉🏻 Set test enabled=true"
+          echo -e "\nenvironment:" >> chart/values.yaml
+          echo "  test:" >> chart/values.yaml
+          echo "    enabled: true" >> chart/values.yaml
+          cat chart/values.yaml
+        fi
+
+
+        echo -e "👉🏻 Linting"
+        ./helm lint chart
+        version=$(./yq '.version' chart/Chart.yaml)
+        echo "version: $version"
+
+        echo "👉🏻 Add dependencies"
+        
+        cd chart/
+        ../helm repo add bitnami https://charts.bitnami.com/bitnami
+        ../helm dependency update
+        cd ..
+
+        echo "👉🏻 Packaging"
+        
+        ./helm package --dependency-update chart/
+        
+        if [ "$(params.revision_type)" = "main" ]; then
+          name=$(params.application_name)
+          echo "👉🏻 Uploading chart for main"
+          echo "👉🏻 Package (main): $name"
+          curl -v --data-binary "@$name-$version.tgz" $(params.chart_repo)
+
+        else
+          echo "👉🏻 Uploading chart (branch)"
+          name=$(params.application_name)-$(params.revision_type)
+          echo "👉🏻 Package: $name"
+          mv $(params.application_name)-$version.tgz $name.tgz
+          ls -ls
+          curl -v --data-binary "@$name.tgz" $(params.chart_repo)
+        fi
+        echo -n `./helm show chart chart | grep version: | awk '{print $2}'` | tee $(results.chart_version.path);

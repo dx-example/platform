@@ -1,31 +1,26 @@
-{{ if .Values.include_apps }}
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: bootstrap
-  namespace: {{ include "argocd" . }}
+  name: cert-manager
+  namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: {{ include "argocd" . }}
+    namespace: {{ include "namespace" . }}
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: app-config/applications
-    repoURL: https://github.com/moonpod/gitops
-    targetRevision: main
+    chart: cert-manager
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 0.8.12
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - Validate=true
-  ignoreDifferences:
-    - group: ''
-      kind: Namespace
-      jsonPointers:
-        - /metadata/annotations
-{{- end }}
+      - CreateNamespace=true

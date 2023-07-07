@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kube-linter
+  namespace: tekton-tasks
+spec:
+  description: >-
+    This task makes it possible to use kube-linter within Tekton Pipeline.
+
+    The KubeLinter tool by StackRox is an open-source command-line interface to identify misconfigurations in Kubernetes objects.
+    KubeLinter offers the ability to integrate checks on Kubernetes YAML files and Helm charts before deployment into a Kubernetes cluster.
+    With 31 standard built-in checks and the room to configure your own, you get immediate feedback about misconfigurations and Kubernetes security violations.
+  params:
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ''
+      type: string
+  workspaces:
+    - name: source
+      description: A workspace that contains fetched git repo.
+  steps:
+    - name: kube-linter
+      image: docker.io/stackrox/kube-linter:0.2.5-8-g8231fb5924-alpine
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      script: |
+        export default_option="do-not-auto-add-defaults"
+        export includelist="unset-memory-requirements,unset-cpu-requirements,no-extensions-v1beta,mismatching-selector,writable-host-mount"
+
+        /kube-linter lint chart --"${default_option}" --include "${includelist}" 

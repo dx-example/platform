@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: npm-build
+  namespace: tekton-tasks
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  description: This task is used for NPM build
+  params:
+    - name: nexus_url
+      description: nexus artifact repository URL to pull the dependencies
+      default: http://sonatype-nexus-service.tools.svc.cluster.local:8081/repository/labs-npm/
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ''
+      type: string
+  workspaces:
+    - name: source
+  steps:
+    - name: set-registry
+      workingDir: $(workspaces.source.path)
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      script: |
+        #!/bin/sh
+        cat <<EOF > .npmrc
+        registry=http://verdaccio.verdaccio.svc.cluster.local:4873
+        _auth=YWRtaW46YWRtaW4xMjM=
+        strict-ssl=false
+        ca=null
+        network-timeout=10000
+        fetch-retry-mintimeout=3000
+        fetch-retry-maxtimeout=5000
+        fetch-retries=2
+        EOF
+
+    - name: install-dependencies
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      script: |
+        #!/bin/sh
+        npm ping && npm install -g pnpm
+        # pnpm install --ignore-scripts --registry=http://verdaccio.verdaccio.svc.cluster.local:4873
+
+    - name: unit-test
+      workingDir: $(workspaces.source.path)/$(params.subdirectory)
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      onError: continue
+      script: |
+        #!/bin/sh
+        # NODE_ENV=test LOG_LEVEL=silent node_modules/.bin/nyc npm run test:unit

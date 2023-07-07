@@ -1,26 +1,31 @@
----
+{{ if .Values.include_apps }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: cert-manager
-  namespace: argocd
+  name: environments
+  namespace: {{ include "argocd" . }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: {{ include "namespace" . }}
+    namespace: {{ include "argocd" . }}
     server: https://kubernetes.default.svc
   project: default
   source:
-    chart: cert-manager
-    repoURL: https://charts.jetstack.io
-    targetRevision: 0.8.12
+    path: applications
+    repoURL: https://github.com/dx-bok/environments
+    targetRevision: main
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - Validate=true
-      - CreateNamespace=true
+  ignoreDifferences:
+    - group: ''
+      kind: Namespace
+      jsonPointers:
+        - /metadata/annotations
+{{- end }}
