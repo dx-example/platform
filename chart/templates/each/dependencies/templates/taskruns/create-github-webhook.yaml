@@ -18,10 +18,10 @@ spec:
     - name: namespace
       value: tekton-tasks
   params:
+  - name: org
+    value: {{ .Values.org }}
   - name: repo-name
     value: {{ .Values.repo }}
-  - name: project-name
-    value: {{ .Values.name }}
   - name: cluster
     value: {{ .Values.domain }}
   - name: domain

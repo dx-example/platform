@@ -8,10 +8,10 @@ spec:
     Creates webhook and deployment key in github repository.
     Webhook will trigger enventlistener in ci-cd namespace for project.
   params:
+    - name: org
+      description: org in github
     - name: repo-name
       description: repository in github
-    - name: project-name
-      description: project in github
     - name: cluster
       description: URL for the cluster
       default: eu-north-1.training.dx-book.com
@@ -31,18 +31,18 @@ spec:
       script: |
         #!/bin/sh
 
-        echo "Creating webhook for $(params.project-name)/$(params.repo-name)"
+        echo "Creating webhook for $(params.org)/$(params.repo-name)"
 
         curl -X POST \
-          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
+          -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/hooks \
           -H "Accept: application/vnd.github.v3+json" \
-          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -u $(params.org):$GITHUB_CREDENTIALS \
           -H 'cache-control: no-cache' \
           -d '{ 
           "name": "web",
           "active": true,
           "config": { 
-            "url": "https://$(params.cluster)/github/$(params.project-name)/$(params.repo-name)/webhook",
+            "url": "https://$(params.cluster)/github/$(params.org)/$(params.repo-name)/webhook",
             "content_type": "json",
             "insecure_ssl": 1
           },
@@ -65,8 +65,8 @@ spec:
         #!/usr/bin/env bash
 
         key_filename=github
-        secret_name=$(params.project-name)-$(params.repo-name)-private-key
-        comment=$(params.project-name)/$(params.repo-name)@$(params.cluster)
+        secret_name=$(params.org)-$(params.repo-name)-private-key
+        comment=$(params.org)/$(params.repo-name)@$(params.cluster)
 
         function cleanup {
           local to_remove=("$key_filename" "$key_filename.pub" payload)
@@ -84,17 +84,17 @@ spec:
         # generate ssh-key
         # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
         cd /tmp
-        ssh-keygen -t ed25519 -a 100 -C $(params.project-name)/$(params.repo-name)@$(params.cluster) -P "" -f $key_filename
+        ssh-keygen -t ed25519 -a 100 -C $(params.org)/$(params.repo-name)@$(params.cluster) -P "" -f $key_filename
 
         # create secret in project ci-cd namespace
         oc create secret generic $secret_name \
           --type=kubernetes.io/ssh-auth \
           --from-file=ssh-privatekey=$key_filename \
-          --namespace $(params.project-name)-ci-cd \
+          --namespace $(params.org)-ci-cd \
 
         # annotate, such that tekton picks it up
         oc annotate secret $secret_name \
-          --namespace $(params.project-name)-ci-cd \
+          --namespace $(params.org)-ci-cd \
           tekton.dev/git-0=github.com \
           --overwrite
 
@@ -108,10 +108,10 @@ spec:
 
         EOF
 
-        curl -X POST -u $(params.project-name):$GITHUB_CREDENTIALS \
-          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/keys \
+        curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
+          -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/keys \
           -H "Accept: application/vnd.github.v3+json" \
-          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -u $(params.org):$GITHUB_CREDENTIALS \
           -H 'cache-control: no-cache' \
           -d @payload
 
@@ -127,9 +127,9 @@ spec:
         #!/bin/sh
 
         curl -X POST \
-          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
+          -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/hooks \
           -H "Accept: application/vnd.github.v3+json" \
-          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -u $(params.org):$GITHUB_CREDENTIALS \
           -H 'cache-control: no-cache' \
           -d '{ 
           "name": "web",
