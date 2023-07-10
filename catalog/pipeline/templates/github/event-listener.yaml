@@ -1,0 +1,105 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ .Values.application.name }}
+  namespace: {{ .Values.project }}-ci-cd
+spec:
+  serviceAccountName: tekton-triggers-sa
+  triggers:
+    - name: when-branch-is-deleted
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "header.canonical('X-GitHub-Event') == 'delete'"
+            - name: "overlays"
+              value:
+                - key: project
+                  expression: "body.repository.owner.login"
+                - key: triggered_by
+                  expression: "body.sender.login"
+                - key: repo_name
+                  expression: "body.repository.name"
+                - key: branch
+                  expression: "body.ref"
+      bindings:
+      - name: project
+        value: $(extensions.project)
+      - name: triggered_by
+        value: $(extensions.triggered_by)
+      - name: repo_name
+        value: $(extensions.repo_name)
+      - name: branch
+        value: $(extensions.branch)
+      template:
+        spec:
+          params:
+            - name: project
+            - name: triggered_by
+            - name: repo_name
+            - name: branch
+          resourcetemplates:
+            - apiVersion: tekton.dev/v1beta1
+              kind: TaskRun
+              metadata:
+                generateName: when-branch-is-deleted-
+              spec:
+                serviceAccountName: tekton-triggers-sa
+                taskSpec:
+                  steps:
+                  - image: quay.io/openshift/origin-cli:4.8
+                    script: |
+                      #!/usr/bin/env bash
+
+                      echo "project: $(tt.params.project)"
+                      echo "repository: $(tt.params.repo_name)"
+                      echo "branch: $(tt.params.branch)"
+                      echo "triggered by: $(tt.params.triggered_by)"
+                      echo ""
+
+                      echo "Deleting argocd application {{ .Values.application.name }}-$(tt.params.branch)"
+                      oc delete -n openshift-gitops application/{{ .Values.application.name }}-$(tt.params.branch) --ignore-not-found || true
+
+                      echo "Deleting buildconfigs {{ .Values.application.name }}-$(tt.params.branch)"
+                      oc delete buildconfig/{{ .Values.application.name }}-$(tt.params.branch) -n {{ .Values.project }}-ci-cd --ignore-not-found || true
+
+    - name: application-build-pipeline-run
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "header.canonical('X-GitHub-Event') == 'push'"
+            - name: "overlays"
+              value:
+                - key: truncated_sha
+                  expression: "body.head_commit.id.truncate(7)"
+                - key: revision
+                  expression: "body.ref"
+                - key: revision_type
+                  expression: "body.ref.split('/')[2]"
+                - key: github_org
+                  expression: "body.repository.owner.name.lowerAscii()"
+                - key: author
+                  expression: "body.head_commit.author.name.lowerAscii().replace(' ','-', 2)"
+      bindings:
+        - ref: {{ .Values.application.name }}-trigger-binding
+      template:
+        ref: {{ .Values.application.name }}-trigger-template
+
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: tekton-triggers-sa
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"

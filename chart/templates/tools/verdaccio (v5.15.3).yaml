@@ -21,8 +21,8 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: verdaccio
-    repoURL: https://github.com/moonpod/helm-charts.git
+    path: catalog/verdaccio
+    repoURL: https://github.com/{{ .Values.org }}/platform.git
     helm:
       values: |
         persistence:

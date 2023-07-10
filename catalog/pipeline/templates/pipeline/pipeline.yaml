@@ -1,0 +1,375 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: {{ .Values.application.name }}
+  namespace: {{ .Values.project }}-ci-cd
+spec:
+  params:
+    - name: ref
+      description: Ref of the application
+      type: string
+    - description: git unique head commit id
+      name: revision
+      type: string
+    - description: repository URL
+      name: repourl
+      type: string
+    - description: repository name
+      name: reponame
+      type: string
+    - description: commit author username
+      name: author
+      type: string
+    - description: commit author email
+      name: email
+      type: string
+    - description: commit message
+      name: message
+      type: string
+    - description: 7 digits from the hash id
+      name: truncated_sha
+      type: string
+    - description: 'type of branch, master or non master'
+      name: revision_type
+      type: string
+    - description: github organisation
+      name: github_org
+      type: string  
+  resources:
+    - name: {{ .Values.application.name }}-git
+      type: git
+    - name: {{ .Values.application.name }}-development
+      type: image
+  workspaces:
+    - name: dockerconfig
+      description: docker creds to pull and push images
+    - name: ssh-directory
+      description: where the ssh keys gets mounted
+    - name: {{ .Values.application.name }}-source
+      description: The git repo will be cloned onto the volume backing this workspace
+  tasks:
+    - name: git
+      params:
+        - name: url
+          value: $(params.repourl)
+        - name: revision
+          value: $(params.revision)
+        - name: subdirectory
+          value: .
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/tektoncd/catalog.git
+          - name: pathInRepo
+            value: /task/git-clone/0.9/git-clone.yaml
+          - name: revision
+            value: main
+      workspaces:
+        - name: ssh-directory
+          workspace: ssh-directory
+        - name: output
+          workspace: {{ .Values.application.name }}-source
+
+    # identify version, runtime etc
+    - name: identify
+      runAfter:
+        - git
+      params:
+        - name: revision_type
+          value: $(params.revision_type)
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: identify
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+
+    # Check helm chart if they follow good kubernetes practices
+    - name: kube-linter
+      runAfter:
+        - identify
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: kube-linter
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+
+    # Check helm chart if they follow good kubernetes practices
+    - name: npm-install
+      when:
+      - input: $(params.revision_type)
+        operator: in
+        values:
+          - main
+      runAfter:
+        - identify
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: npm-build
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+
+    - name: image-build-branch
+      when:
+      - input: $(params.revision_type)
+        operator: notin
+        values:
+          - main
+      runAfter:
+        - kube-linter
+        - npm-install
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: kaniko
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: IMAGE
+          value: 292243477487.dkr.ecr.us-east-1.amazonaws.com/$(params.reponame):$(params.revision_type)
+
+    - name: image-build-main
+      when:
+      - input: $(params.revision_type)
+        operator: in
+        values:
+          - main
+      runAfter:
+        - kube-linter
+        - npm-install
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: kaniko
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: IMAGE
+          value: 292243477487.dkr.ecr.us-east-1.amazonaws.com/$(params.reponame):$(tasks.identify.results.version)
+
+    # package helm chart
+    - name: helm-package
+      runAfter:
+        - kube-linter
+        - image-build-main
+        - image-build-branch
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: helm-package
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+      params:
+        - name: application_name
+          value: $(params.reponame)
+        - name: revision_type
+          value: $(params.revision_type)
+        - name: truncated_sha
+          value: $(params.truncated_sha)
+
+    - name: deploy
+      runAfter:
+        - helm-package
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: deploy
+        - name: namespace
+          value: tekton-tasks
+      params:
+        - name: config_repo
+          value: https://github.com/moonpod/gitops.git
+        - name: project_name
+          value: $(params.github_org)
+        - name: revision_type
+          value: $(params.revision_type)
+        - name: application_name
+          value: $(params.reponame)
+        - name: chart_version
+          value: "$(tasks.helm-package.results.chart_version)"
+        - name: version
+          value: "$(tasks.identify.results.version)"
+        - name: truncated_sha
+          value: $(params.truncated_sha)
+
+    - name: image-build-test
+      when:
+      - input: $(params.revision_type)
+        operator: in
+        values:
+          - main
+      runAfter:
+        - image-build-main
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: kaniko
+        - name: namespace
+          value: tekton-tasks
+      workspaces:
+        - name: source
+          workspace: {{ .Values.application.name }}-source
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: IMAGE
+          value: 292243477487.dkr.ecr.us-east-1.amazonaws.com/$(params.reponame):test-$(tasks.identify.results.version)
+        - name: DOCKERFILE
+          value: ./Dockerfile.test
+        - name: EXTRA_ARGS
+          value: 
+            - "--build-arg=APPLICATION=$(params.reponame)"
+            - "--build-arg=VERSION=$(tasks.identify.results.version)"
+
+    - name: e2e
+      when:
+      - input: $(params.revision_type)
+        operator: in
+        values:
+          - main
+      runAfter:
+        - image-build-test
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: e2e
+        - name: namespace
+          value: tekton-tasks
+      params:
+        - name: application_name
+          value: $(params.reponame)
+        - name: version
+          value: "$(tasks.identify.results.version)"
+
+      # Verify the new deployment is successfull
+    # - name: verify-deployment
+    #   runAfter:
+    #     - deploy
+    #   taskRef:
+    #     resolver: cluster
+    #     params:
+    #     - name: kind
+    #       value: task
+    #     - name: name
+    #       value: verify-deployment
+    #   workspaces:
+    #     - name: source
+    #       workspace: {{ .Values.application.name }}-source
+    #   timeout: 2m0s
+    #   params:
+    #     - name: application_name
+    #       value: $(params.reponame)
+    #     - name: revision_type
+    #       value: $(params.revision_type)
+    #     - name: chart_version
+    #       value: "$(tasks.helm-package.results.chart_version)"
+    #     - name: version
+    #       value: "$(tasks.identify.results.version)"
+    #     - name: previous_version
+    #       value: "$(tasks.deploy.results.previous_version)"
+    #     - name: previous_chart_version
+    #       value: "$(tasks.deploy.results.previous_chart_version)"
+    #     - name: deployment_environment
+    #       value: development
+    #     - name: project_name
+    #       value: $(params.github_org)
+
+    # # promote stage via pull request
+    # # todo: use the .releaserc to generate releases automatically
+    # # todo: generate changelog automatic and tag back to the repo
+    # - name: promote
+    #   when:
+    #     - input: "$(params.revision_type)"
+    #       operator: in
+    #       values: ["main"]
+    #   runAfter:
+    #     - verify-deployment
+    #   taskRef:
+    #     kind: ClusterTask
+    #     name: br-promote
+    #   timeout: 1m30s
+    #   params:       
+    #     - name: config_repo
+    #       value: https://github.com/moonpod/gitops.git
+    #     - name: application_name
+    #       value: $(params.reponame)
+    #     - name: destination
+    #       value: production
+    #     - name: version
+    #       value: "$(tasks.identify.results.version)"
+    #     - name: chart_version
+    #       value: "$(tasks.helm-package.results.chart_version)"
+    #     - name: project_name
+    #       value: $(params.github_org)
+
+
+  results:
+    - name: version
+      description: Version of the application
+      value: "$(tasks.identify.results.version)"
+    # - name: chart_version
+    #   description: Version of the helm chart
+    #   value: "$(tasks.helm-package.results.chart_version)"
+    # - name: previous_version
+    #   description: Previous version of the application
+    #   value: "$(tasks.deploy.results.previous_version)"
+    # - name: previous_chart_version
+    #   description: Previous version of the helm chart
+    #   value: "$(tasks.deploy.results.previous_chart_version)"

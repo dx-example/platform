@@ -1,0 +1,24 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: {{ .Values.application.name }}-git
+spec:
+  type: git
+  params:
+    - name: url
+    - name: revision
+    - name: submodules
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: {{ .Values.application.name }}-development
+  namespace: {{ .Values.project }}-ci-cd
+  labels:
+    app: {{ .Values.application.name }}
+spec:
+  type: image
+  params:
+    - name: url
+      value: image-registry.openshift-image-registry.svc:5000/{{ .Values.project }}-development/{{ .Values.project }}-development

@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  pipeline:
+  - apiVersion: v2
+    created: "2022-11-15T18:09:38.412424+01:00"
+    description: This is a template for a tekton pipeline.
+    digest: e270f117971e37a2fc12edb0546ae5df91b2e31e03a1a015ba38656ed50f475a
+    home: https://github.com/moonpod/helm-charts.git
+    name: pipeline
+    type: application
+    urls:
+    - http://localhost:8081/helm-charts/pipeline-1.0.0.tgz
+    version: 1.0.0
+generated: "2022-11-15T18:09:38.408663+01:00"

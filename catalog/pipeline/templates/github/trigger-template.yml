@@ -1,0 +1,101 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ .Values.application.name }}-trigger-template
+  namespace: {{ .Values.project }}-ci-cd
+spec:
+  # description: >-
+  #   This `TriggerTemplate` consumes data from the trigger binding file and fires a new pipelinerun with a pipeline as reference.
+  params:
+  - name: ref
+    description: git reference or branch name
+  - name: revision
+    description: The revision of your git repository
+  - name: repourl
+    description: The url of your git repository
+  - name: reponame
+    description: The name of your git repository
+  - name: repofullname
+    description: The full name of your git repository
+  - name: message
+    description: commit message
+  - name: author
+    description: commit author username
+  - name: email
+    description: commit author email
+  - name: truncated_sha
+    description: 7 digits hash id
+  - name: revision_type
+    description: type of branch
+  - name: github_org
+    description: org in github
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: $(tt.params.reponame)-$(tt.params.author)-$(tt.params.revision_type)-
+      namespace: {{ include "ns.cicd" . }}
+      labels:
+        webhooks.tekton.dev/repo: $(tt.params.reponame)
+        webhooks.tekton.dev/author: $(tt.params.author)
+      annotations:
+        argocd.argoproj.io/compare-options: IgnoreExtraneous
+    spec:
+      serviceAccountName: github-sa
+      workspaces:
+          - name: dockerconfig
+            secret:
+              secretName: {{ .Values.project }}-{{ .Values.application.name }}-docker-credentials
+          - name: ssh-directory
+            secret:
+              secretName: {{ .Values.project }}-{{ .Values.application.name }}-ssh-credentials
+          - name: {{ .Values.application.name }}-source
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                storageClassName: longhorn
+                resources:
+                  requests:
+                    storage: 2Gi
+      params:
+        - name: ref
+          value: $(tt.params.ref)
+        - name: revision
+          value: $(tt.params.revision)
+        - name: revision_type
+          value: $(tt.params.revision_type)
+        - name: author
+          value: $(tt.params.author)
+        - name: email
+          value: $(tt.params.email)
+        - name: message
+          value: $(tt.params.message)
+        - name: repourl
+          value: $(tt.params.repourl)
+        - name: repofullname
+          value: $(tt.params.repofullname)
+        - name: reponame
+          value: $(tt.params.reponame)
+        - name: github_org
+          value: $(tt.params.github_org)
+        - name: truncated_sha
+          value: $(tt.params.truncated_sha)
+      pipelineRef:
+        name: {{ .Values.application.name }}
+      podTemplate:
+        securityContext:
+          fsGroup: 65532
+      resources:
+        - name: {{ .Values.application.name }}-git
+          resourceSpec:
+            type: git
+            params:
+              - name: url
+                value: $(tt.params.repourl)
+              - name: revision
+                value: $(tt.params.revision)
+        - name: {{ .Values.application.name }}-development
+          resourceRef:
+            name: {{ .Values.application.name }}-development
