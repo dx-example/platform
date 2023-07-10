@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-  name: "{{ .Values.repo }}-create-aws-ecr-reg"
+  name: "create-aws-ecr-reg"
   namespace: {{ .Values.repo }}-development
   annotations:
       argocd.argoproj.io/compare-options: IgnoreExtraneous

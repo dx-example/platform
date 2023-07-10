@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Values.repo }}-aws-ecr-renewal
+  name: aws-ecr-renewal
   namespace: {{ .Values.repo }}-development
 spec:
   schedule: "0 * * * *"
@@ -48,7 +48,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.repo }}-create-regcred-dev
+  name: create-regcred-dev
   namespace: {{ .Values.repo }}-development
 spec:
   template:
@@ -91,7 +91,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.repo }}-create-regcred-ci-cd
+  name: create-regcred-ci-cd
   namespace: {{ .Values.repo }}-development
 spec:
   template:
