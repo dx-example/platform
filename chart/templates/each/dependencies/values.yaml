@@ -1,0 +1,2 @@
+# The values from here are being provided by the ApplicationSet/dependencies.yaml
+# Every resource in this folder will be looped thru the discovered services

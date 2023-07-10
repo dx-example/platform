@@ -11,12 +11,12 @@ spec:
   taskRef:
     resolver: cluster
     params:
-      - name: kind
-        value: task
-      - name: name
-        value: create-github-resources
-      - name: namespace
-        value: tekton-tasks
+    - name: kind
+      value: task
+    - name: name
+      value: create-github-resources
+    - name: namespace
+      value: tekton-tasks
   params:
   - name: repo-name
     value: {{ .Values.repo }}
