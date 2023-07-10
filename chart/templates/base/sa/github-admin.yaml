@@ -1,0 +1,10 @@
+# This service account is used to create webhooks in GitHub via hooks API
+# It uses the secret from the github-admin-auth secret
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-admin
+  namespace: {{ include "argocd" . }}
+secrets:
+  - name: github-admin-auth
