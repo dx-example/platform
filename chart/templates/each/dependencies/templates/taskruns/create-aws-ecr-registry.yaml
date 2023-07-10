@@ -1,0 +1,24 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: "{{ .Values.repo }}-create-aws-ecr-reg"
+  namespace: {{ .Values.repo }}-development
+  annotations:
+      argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  serviceAccountName: default
+  taskRef:
+    resolver: cluster
+    params:
+    - name: kind
+      value: task
+    - name: name
+      value: create-aws-ecr-registry
+    - name: namespace
+      value: tekton-tasks
+  params:
+  - name: repo-name
+    value: {{ .Values.repo }}
+  - name: region
+    value: {{ .Values.aws.region }}
