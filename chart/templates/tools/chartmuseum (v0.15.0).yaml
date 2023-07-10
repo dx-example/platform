@@ -9,12 +9,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: {{ include "namespace" . }}
+    namespace: { { include "namespace" . } }
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: chartmuseum
-    repoURL: https://github.com/moonpod/helm-charts.git
+    path: catalog/chartmuseum
+    repoURL: https://github.com/{{ .Values.org }}/platform.git
     helm:
       values: |
         fullnameOverride: chartmuseum
