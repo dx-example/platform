@@ -79,12 +79,14 @@ spec:
             DOCKER_USER=AWS
             DOCKER_PASSWORD=`aws ecr get-login --region ${AWS_REGION} --registry-ids ${AWS_ACCOUNT} | cut -d' ' -f6`
 
-            kubectl create secret docker-registry regcred \
-            --docker-server=$DOCKER_REGISTRY_SERVER \
-            --docker-username=$DOCKER_USER \
-            --docker-password=$DOCKER_PASSWORD \
-            --docker-email=no@email.local \
-            --namespace {{ .Values.repo }}-development
+            if ! kubectl get secret regcred -n {{ .Values.repo }}-development > /dev/null 2>&1; then
+              kubectl create secret docker-registry regcred \
+              --docker-server=$DOCKER_REGISTRY_SERVER \
+              --docker-username=$DOCKER_USER \
+              --docker-password=$DOCKER_PASSWORD \
+              --docker-email=no@email.local \
+              --namespace {{ .Values.repo }}-development
+            fi
       restartPolicy: Never
   backoffLimit: 1
 ---
@@ -122,11 +124,13 @@ spec:
             DOCKER_USER=AWS
             DOCKER_PASSWORD=`aws ecr get-login --region ${AWS_REGION} --registry-ids ${AWS_ACCOUNT} | cut -d' ' -f6`
 
-            kubectl create secret docker-registry regcred \
-            --docker-server=$DOCKER_REGISTRY_SERVER \
-            --docker-username=$DOCKER_USER \
-            --docker-password=$DOCKER_PASSWORD \
-            --docker-email=no@email.local \
-            --namespace {{ .Values.repo }}-ci-cd
+            if ! kubectl get secret regcred -n {{ .Values.repo }}-ci-cd > /dev/null 2>&1; then
+              kubectl create secret docker-registry regcred \
+              --docker-server=$DOCKER_REGISTRY_SERVER \
+              --docker-username=$DOCKER_USER \
+              --docker-password=$DOCKER_PASSWORD \
+              --docker-email=no@email.local \
+              --namespace {{ .Values.repo }}-ci-cd
+            fi
       restartPolicy: Never
   backoffLimit: 1
