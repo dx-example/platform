@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: create-github-resources
+  namespace: tekton-tasks
 spec:
   description: |
     Creates webhook and deployment key in github repository.
@@ -13,133 +14,133 @@ spec:
       description: project in github
     - name: cluster
       description: URL for the cluster
-      default: dev.moonpod.app
+      default: eu-north-1.training.dx-book.com
     - name: domain
       description: root level domain name
-      default: moonpod.app
+      default: training.dx-book.com
 
   steps:
-  - name: create-webhook
-    image: registry.access.redhat.com/ubi8/nodejs-16
-    env:
-      - name: GITHUB_CREDENTIALS
-        valueFrom:
-          secretKeyRef:
-            name: github-admin-auth
-            key: GITHUB_CREDENTIALS
-    script: |
-      #!/bin/sh
+    - name: create-webhook
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      env:
+        - name: GITHUB_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: github-admin-auth
+              key: GITHUB_CREDENTIALS
+      script: |
+        #!/bin/sh
 
-      echo "Creating webhook for $(params.project-name)/$(params.repo-name)"
+        echo "Creating webhook for $(params.project-name)/$(params.repo-name)"
 
-      curl -X POST \
-        -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
-        -H "Accept: application/vnd.github.v3+json" \
-        -u $(params.project-name):$GITHUB_CREDENTIALS \
-        -H 'cache-control: no-cache' \
-        -d '{ 
-        "name": "web",
-        "active": true,
-        "config": { 
-          "url": "https://$(params.cluster)/github/$(params.project-name)/$(params.repo-name)/webhook",
-          "content_type": "json",
-          "insecure_ssl": 1
-        },
-        "events": [  
-          "pull_request", 
-          "push",
-          "delete"
-        ] 
-      }'
+        curl -X POST \
+          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
+          -H "Accept: application/vnd.github.v3+json" \
+          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -H 'cache-control: no-cache' \
+          -d '{ 
+          "name": "web",
+          "active": true,
+          "config": { 
+            "url": "https://$(params.cluster)/github/$(params.project-name)/$(params.repo-name)/webhook",
+            "content_type": "json",
+            "insecure_ssl": 1
+          },
+          "events": [  
+            "pull_request", 
+            "push",
+            "delete"
+          ] 
+        }'
 
-  - name: create-deployment-repo
-    image: quay.io/mmaestri/tools:pipeline
-    env:
-      - name: GITHUB_CREDENTIALS
-        valueFrom:
-          secretKeyRef:
-            name: github-admin-auth
-            key: GITHUB_CREDENTIALS
-    script: |
-      #!/usr/bin/env bash
+    - name: create-deployment-repo
+      image: quay.io/mmaestri/tools:pipeline
+      env:
+        - name: GITHUB_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: github-admin-auth
+              key: GITHUB_CREDENTIALS
+      script: |
+        #!/usr/bin/env bash
 
-      key_filename=github
-      secret_name=$(params.project-name)-$(params.repo-name)-private-key
-      comment=$(params.project-name)/$(params.repo-name)@$(params.cluster)
+        key_filename=github
+        secret_name=$(params.project-name)-$(params.repo-name)-private-key
+        comment=$(params.project-name)/$(params.repo-name)@$(params.cluster)
 
-      function cleanup {
-        local to_remove=("$key_filename" "$key_filename.pub" payload)
-        echo
-        echo "removing ${to_remove[*]}"
+        function cleanup {
+          local to_remove=("$key_filename" "$key_filename.pub" payload)
+          echo
+          echo "removing ${to_remove[*]}"
 
-        for filename in "${to_remove[@]}"; do
-          # -f makes it not failing when missing
-          rm -f "$filename"
-        done
-      }
+          for filename in "${to_remove[@]}"; do
+            # -f makes it not failing when missing
+            rm -f "$filename"
+          done
+        }
 
-      trap cleanup EXIT
+        trap cleanup EXIT
 
-      # generate ssh-key
-      # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
-      cd /tmp
-      ssh-keygen -t ed25519 -a 100 -C $(params.project-name)/$(params.repo-name)@$(params.cluster) -P "" -f $key_filename
+        # generate ssh-key
+        # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
+        cd /tmp
+        ssh-keygen -t ed25519 -a 100 -C $(params.project-name)/$(params.repo-name)@$(params.cluster) -P "" -f $key_filename
 
-      # create secret in project ci-cd namespace
-      oc create secret generic $secret_name \
-        --type=kubernetes.io/ssh-auth \
-        --from-file=ssh-privatekey=$key_filename \
-        --namespace $(params.project-name)-ci-cd \
-      
-      # annotate, such that tekton picks it up
-      oc annotate secret $secret_name \
-        --namespace $(params.project-name)-ci-cd \
-        tekton.dev/git-0=github.com \
-        --overwrite
+        # create secret in project ci-cd namespace
+        oc create secret generic $secret_name \
+          --type=kubernetes.io/ssh-auth \
+          --from-file=ssh-privatekey=$key_filename \
+          --namespace $(params.project-name)-ci-cd \
 
-      cat << EOF > payload
+        # annotate, such that tekton picks it up
+        oc annotate secret $secret_name \
+          --namespace $(params.project-name)-ci-cd \
+          tekton.dev/git-0=github.com \
+          --overwrite
 
-      {
-        "title": "$comment",
-        "key": "$(cat $key_filename.pub) $comment",
-        "read_only": false
-      }
+        cat << EOF > payload
 
-      EOF
+        {
+          "title": "$comment",
+          "key": "$(cat $key_filename.pub) $comment",
+          "read_only": false
+        }
 
-      curl -X POST -u $(params.project-name):$GITHUB_CREDENTIALS \
-        -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/keys \
-        -H "Accept: application/vnd.github.v3+json" \
-        -u $(params.project-name):$GITHUB_CREDENTIALS \
-        -H 'cache-control: no-cache' \
-        -d @payload
+        EOF
 
-  - name: create-webhook-argocd
-    image: registry.access.redhat.com/ubi8/nodejs-16
-    env:
-      - name: GITHUB_CREDENTIALS
-        valueFrom:
-          secretKeyRef:
-            name: github-admin-auth
-            key: GITHUB_CREDENTIALS
-    script: |
-      #!/bin/sh
+        curl -X POST -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/keys \
+          -H "Accept: application/vnd.github.v3+json" \
+          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -H 'cache-control: no-cache' \
+          -d @payload
 
-      curl -X POST \
-        -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
-        -H "Accept: application/vnd.github.v3+json" \
-        -u $(params.project-name):$GITHUB_CREDENTIALS \
-        -H 'cache-control: no-cache' \
-        -d '{ 
-        "name": "web",
-        "active": true,
-        "config": { 
-          "url": "https://argocd.$(params.domain)/api/webhook",
-          "content_type": "json",
-          "insecure_ssl": 1
-        },
-        "events": [  
-          "pull_request", 
-          "push"
-        ] 
-      }'
+    - name: create-webhook-argocd
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      env:
+        - name: GITHUB_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: github-admin-auth
+              key: GITHUB_CREDENTIALS
+      script: |
+        #!/bin/sh
+
+        curl -X POST \
+          -L https://api.github.com/repos/$(params.project-name)/$(params.repo-name)/hooks \
+          -H "Accept: application/vnd.github.v3+json" \
+          -u $(params.project-name):$GITHUB_CREDENTIALS \
+          -H 'cache-control: no-cache' \
+          -d '{ 
+          "name": "web",
+          "active": true,
+          "config": { 
+            "url": "https://argocd.$(params.domain)/api/webhook",
+            "content_type": "json",
+            "insecure_ssl": 1
+          },
+          "events": [  
+            "pull_request", 
+            "push"
+          ] 
+        }'
