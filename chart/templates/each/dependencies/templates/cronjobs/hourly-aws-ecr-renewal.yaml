@@ -1,0 +1,132 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.repo }}-aws-ecr-renewal
+  namespace: {{ .Values.repo }}-development
+spec:
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: {{ .Values.repo }}-ecr-renewal
+          terminationGracePeriodSeconds: 0
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              imagePullPolicy: IfNotPresent
+              image: xynova/aws-kubectl:latest
+              envFrom:
+              - secretRef:
+                  name: {{ .Values.repo }}-aws-secret
+              command:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  AWS_ACCOUNT={{ .Values.aws.account }}
+                  AWS_REGION={{ .Values.aws.region }}
+                  DOCKER_REGISTRY_SERVER=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                  DOCKER_USER=AWS
+                  DOCKER_PASSWORD=`aws ecr get-login --region ${AWS_REGION} --registry-ids ${AWS_ACCOUNT} | cut -d' ' -f6`
+
+                  kubectl delete secret regcred --namespace {{ .Values.repo }}-development || true
+                  kubectl create secret docker-registry regcred \
+                  --docker-server=$DOCKER_REGISTRY_SERVER \
+                  --docker-username=$DOCKER_USER \
+                  --docker-password=$DOCKER_PASSWORD \
+                  --docker-email=no@email.local \
+                  --namespace {{ .Values.repo }}-development
+
+                  # kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+                  # kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"regcred"}]}' --namespace {{ .Values.repo }}-development
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.repo }}-create-regcred-dev
+  namespace: {{ .Values.repo }}-development
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Values.repo }}-ecr-renewal
+      containers:
+      - name: kubectl
+        imagePullPolicy: IfNotPresent
+        image: xynova/aws-kubectl:latest
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.repo }}-aws-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.repo }}-aws-secret
+              key: AWS_SECRET_ACCESS_KEY
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            AWS_ACCOUNT={{ .Values.aws.account }}
+            AWS_REGION={{ .Values.aws.region }}
+            DOCKER_REGISTRY_SERVER=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+            DOCKER_USER=AWS
+            DOCKER_PASSWORD=`aws ecr get-login --region ${AWS_REGION} --registry-ids ${AWS_ACCOUNT} | cut -d' ' -f6`
+
+            kubectl create secret docker-registry regcred \
+            --docker-server=$DOCKER_REGISTRY_SERVER \
+            --docker-username=$DOCKER_USER \
+            --docker-password=$DOCKER_PASSWORD \
+            --docker-email=no@email.local \
+            --namespace {{ .Values.repo }}-development
+      restartPolicy: Never
+  backoffLimit: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.repo }}-create-regcred-ci-cd
+  namespace: {{ .Values.repo }}-development
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Values.repo }}-ecr-renewal
+      containers:
+      - name: kubectl
+        imagePullPolicy: IfNotPresent
+        image: xynova/aws-kubectl:latest
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.repo }}-aws-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.repo }}-aws-secret
+              key: AWS_SECRET_ACCESS_KEY
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            AWS_ACCOUNT={{ .Values.aws.account }}
+            AWS_REGION={{ .Values.aws.region }}
+            DOCKER_REGISTRY_SERVER=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+            DOCKER_USER=AWS
+            DOCKER_PASSWORD=`aws ecr get-login --region ${AWS_REGION} --registry-ids ${AWS_ACCOUNT} | cut -d' ' -f6`
+
+            kubectl create secret docker-registry regcred \
+            --docker-server=$DOCKER_REGISTRY_SERVER \
+            --docker-username=$DOCKER_USER \
+            --docker-password=$DOCKER_PASSWORD \
+            --docker-email=no@email.local \
+            --namespace {{ .Values.repo }}-ci-cd
+      restartPolicy: Never
+  backoffLimit: 1

@@ -1,0 +1,28 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: "{{ .Values.repo }}-create-github-resources"
+  namespace: {{ include "argocd" . }}
+  annotations:
+      argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  serviceAccountName: github-admin
+  taskRef:
+    resolver: cluster
+    params:
+      - name: kind
+        value: task
+      - name: name
+        value: create-github-resources
+      - name: namespace
+        value: tekton-tasks
+  params:
+  - name: repo-name
+    value: {{ .Values.repo }}
+  - name: project-name
+    value: {{ .Values.name }}
+  - name: cluster
+    value: {{ .Values.domain }}
+  - name: domain
+    value: {{ .Values.root }}
