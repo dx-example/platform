@@ -3,7 +3,7 @@ kind: Application
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: cluster-tasks
+  name: tekton-tasks
   namespace: {{ include "argocd" . }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -13,9 +13,9 @@ spec:
     namespace: default
   project: default
   source:
-    repoURL: https://github.com/moonpod/gitops.git
+    repoURL: https://github.com/{{ .Values.org }}/platform.git
     targetRevision: main
-    path: cluster-tasks/build
+    path: chart/templates/tasks
   syncPolicy:
     automated:
       prune: true

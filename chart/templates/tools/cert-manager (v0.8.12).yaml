@@ -17,6 +17,9 @@ spec:
     chart: cert-manager
     repoURL: https://charts.bitnami.com/bitnami
     targetRevision: 0.8.12
+    helm:
+      values: |
+        installCRDs: true
   syncPolicy:
     automated:
       prune: true

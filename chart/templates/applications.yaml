@@ -4,7 +4,7 @@ kind: Application
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: environments
+  name: envs
   namespace: {{ include "argocd" . }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -14,7 +14,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: applications
+    path: applicationsets
     repoURL: https://github.com/dx-book/environments
     targetRevision: main
   syncPolicy:

@@ -5,6 +5,10 @@ metadata:
   name: argocd-ingress
   namespace: argocd
   annotations:
+    # cert-manager.io/cluster-issuer: letsencrypt-production
+    # kubernetes.io/tls-acme: "true"
+    # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/cluster-issuer: letsencrypt-production
     kubernetes.io/ingress.class: traefik
     nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
