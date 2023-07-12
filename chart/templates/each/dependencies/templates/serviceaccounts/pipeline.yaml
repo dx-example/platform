@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline
+  namespace: {{ .Values.repo }}-ci-cd
+secrets:
+  - name: tekton-github
+  # - name: github-{{ .Values.repo }}-https-auth
+  # - name: github-{{ .Values.repo }}-gitops-ssh
+imagePullSecrets:
+- name: regcred

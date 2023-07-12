@@ -42,7 +42,7 @@ spec:
       annotations:
         argocd.argoproj.io/compare-options: IgnoreExtraneous
     spec:
-      serviceAccountName: github-sa
+      serviceAccountName: pipeline
       workspaces:
           - name: dockerconfig
             secret:
