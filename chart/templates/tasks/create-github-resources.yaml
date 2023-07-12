@@ -65,7 +65,7 @@ spec:
         #!/usr/bin/env bash
 
         key_filename=github
-        secret_name=private-key
+        secret_name=github-private-key
         comment=$(params.repo-name)@$(params.cluster)
 
         function cleanup {
