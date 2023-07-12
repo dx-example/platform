@@ -9,7 +9,7 @@ metadata:
   name: pipeline
   namespace: {{ .Values.repo }}-ci-cd
 secrets:
-  - name: github-private-key
+  - name: git-credentials
   # - name: github-{{ .Values.repo }}-https-auth
   # - name: github-{{ .Values.repo }}-gitops-ssh
 imagePullSecrets:
