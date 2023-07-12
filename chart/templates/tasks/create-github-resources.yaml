@@ -90,21 +90,27 @@ spec:
         # Download kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
 
+        SECRET_EXISTS=false
         if kubectl get secret $secret_name --namespace $$(params.repo-name)-ci-cd > /dev/null 2>&1; then
             SECRET_EXISTS=true
         fi
 
-        # create secret in project ci-cd namespace
-        ./kubectl create secret generic $secret_name \
-          --type=kubernetes.io/ssh-auth \
-          --from-file=ssh-privatekey=$key_filename \
-          --namespace $(params.repo-name)-ci-cd
+        echo "SECRET_EXISTS=$SECRET_EXISTS"
 
-        # annotate, such that tekton picks it up
-        ./kubectl annotate secret $secret_name \
-          --namespace $(params.repo-name)-ci-cd \
-          tekton.dev/git-0=github.com \
-          --overwrite
+        if [ "$SECRET_EXISTS" = false ] ; then
+
+          # create secret in project ci-cd namespace
+          ./kubectl create secret generic $secret_name \
+            --type=kubernetes.io/ssh-auth \
+            --from-file=ssh-privatekey=$key_filename \
+            --namespace $(params.repo-name)-ci-cd
+
+          # annotate, such that tekton picks it up
+          ./kubectl annotate secret $secret_name \
+            --namespace $(params.repo-name)-ci-cd \
+            tekton.dev/git-0=github.com \
+            --overwrite
+        fi
 
         cat << EOF > payload
 
