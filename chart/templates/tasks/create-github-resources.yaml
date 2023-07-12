@@ -65,7 +65,7 @@ spec:
         #!/usr/bin/env bash
 
         key_filename=github
-        secret_name=$(params.org)-$(params.repo-name)-private-key
+        secret_name=private-key
         comment=$(params.org)/$(params.repo-name)@$(params.cluster)
 
         function cleanup {
@@ -84,13 +84,15 @@ spec:
         # generate ssh-key
         # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
         cd /tmp
-        ssh-keygen -t ed25519 -a 100 -C $(params.org)/$(params.repo-name)@$(params.cluster) -P "" -f $key_filename
+        echo Creating key "$hostname"
+        ssh-keygen -t ed25519 -a 100 -C $comment -P "" -f $key_filename
+        ls -ls
 
         # create secret in project ci-cd namespace
         oc create secret generic $secret_name \
           --type=kubernetes.io/ssh-auth \
           --from-file=ssh-privatekey=$key_filename \
-          --namespace $(params.repo-name)-ci-cd \
+          --namespace $(params.repo-name)-ci-cd 
 
         # annotate, such that tekton picks it up
         oc annotate secret $secret_name \
