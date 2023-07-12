@@ -90,6 +90,10 @@ spec:
         # Download kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
 
+        if kubectl get secret $SECRET_NAME --namespace $NAMESPACE > /dev/null 2>&1; then
+            SECRET_EXISTS=true
+        fi
+
         # create secret in project ci-cd namespace
         ./kubectl create secret generic $secret_name \
           --type=kubernetes.io/ssh-auth \
@@ -113,7 +117,7 @@ spec:
         EOF
 
 
-        if ! ./kubectl get secret/$secret_name -n $(params.repo-name)-ci-cd > /dev/null 2>&1; then
+        if [ "$SECRET_EXISTS" = false ] ; then
           echo "Requesting to GitHub API"
           curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
             -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/keys \
