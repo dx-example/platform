@@ -84,46 +84,45 @@ spec:
         # Download kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
         cp kubectl /tmp/kubectl
+        # generate ssh-key
+        # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
+        cd /tmp
+        echo "Generating ssh key $comment"
+        ssh-keygen -t ed25519 -a 100 -C $comment -P "" -f $key_filename
+
+        # create secret in project ci-cd namespace
+        ./tmp/kubectl create secret generic $secret_name \
+          --type=kubernetes.io/ssh-auth \
+          --from-file=ssh-privatekey=$key_filename \
+          --namespace $(params.repo-name)-ci-cd
+
+        # annotate, such that tekton picks it up
+        ./tmp/kubectl annotate secret $secret_name \
+          --namespace $(params.repo-name)-ci-cd \
+          tekton.dev/git-0=github.com \
+          --overwrite
+
+        cat << EOF > payload
+
+        {
+          "title": "$comment",
+          "key": "$(cat $key_filename.pub) $comment",
+          "read_only": false
+        }
+
+        EOF
+
+
         if ! ./tmp/kubectl get secret/$secret_name -n $(params.repo-name)-ci-cd > /dev/null 2>&1; then
-          # generate ssh-key
-          # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
-          cd /tmp
-          echo "Generating ssh key $comment"
-          ssh-keygen -t ed25519 -a 100 -C $comment -P "" -f $key_filename
-
-          # create secret in project ci-cd namespace
-          ./tmp/kubectl create secret generic $secret_name \
-            --type=kubernetes.io/ssh-auth \
-            --from-file=ssh-privatekey=$key_filename \
-            --namespace $(params.repo-name)-ci-cd
-
-          # annotate, such that tekton picks it up
-          ./tmp/kubectl annotate secret $secret_name \
-            --namespace $(params.repo-name)-ci-cd \
-            tekton.dev/git-0=github.com \
-            --overwrite
-
-          cat << EOF > payload
-
-          {
-            "title": "$comment",
-            "key": "$(cat $key_filename.pub) $comment",
-            "read_only": false
-          }
-
-          EOF
-
           echo "Requesting to GitHub API"
-
           curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
             -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/keys \
             -H "Accept: application/vnd.github.v3+json" \
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
             -d @payload
-
         else
-          echo "Secret already exists"
+          echo "Skipped because the secret already exists"
         fi
 
     - name: create-webhook-argocd
