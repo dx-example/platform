@@ -91,7 +91,7 @@ spec:
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
 
         SECRET_EXISTS=false
-        if kubectl get secret $secret_name --namespace $$(params.repo-name)-ci-cd > /dev/null 2>&1; then
+        if "./kubectl get secret $secret_name --namespace $$(params.repo-name)-ci-cd" > /dev/null 2>&1; then
             SECRET_EXISTS=true
         fi
 
