@@ -89,16 +89,16 @@ spec:
         ls -ls
 
         # Download kubectl
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && mv kubectl /usr/local/bin/
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
 
         # create secret in project ci-cd namespace
-        kubectl create secret generic $secret_name \
+        ./kubectl create secret generic $secret_name \
           --type=kubernetes.io/ssh-auth \
           --from-file=ssh-privatekey=$key_filename \
           --namespace $(params.repo-name)-ci-cd 
 
         # annotate, such that tekton picks it up
-        kubectl annotate secret $secret_name \
+        ./kubectl annotate secret $secret_name \
           --namespace $(params.repo-name)-ci-cd \
           tekton.dev/git-0=github.com \
           --overwrite
