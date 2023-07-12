@@ -84,7 +84,7 @@ spec:
         # generate ssh-key
         # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
         cd /tmp
-        echo Creating key "$hostname"
+        echo "Generating ssh key $comment"
         ssh-keygen -t ed25519 -a 100 -C $comment -P "" -f $key_filename
         ls -ls
 
@@ -109,6 +109,8 @@ spec:
         }
 
         EOF
+
+        echo "Requesting to GitHub API"
 
         curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
           -L https://api.github.com/repos/$(params.org)/$(params.repo-name)/keys \
