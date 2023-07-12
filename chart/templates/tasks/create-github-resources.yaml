@@ -85,7 +85,7 @@ spec:
         # https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices
         cd /tmp
         echo "Generating ssh key $comment"
-        ssh-keygen -t ed25519 -a 100 -C $comment -P "" -f $key_filename
+        ssh-keygen -t rsa -b 4096 -C $comment -P "" -f $key_filename
 
         # Download kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
