@@ -1,3 +1,7 @@
+# The secret github-private-key is generated under the each/depdendencies
+# It's executed via  TaskRun called create-github-resources
+# It generates a ssh private key and adds to the repository
+# Also saves under the ci-cd namespace with the github-privatey-key name
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -5,7 +9,7 @@ metadata:
   name: pipeline
   namespace: {{ .Values.repo }}-ci-cd
 secrets:
-  - name: tekton-github
+  - name: github-private-key
   # - name: github-{{ .Values.repo }}-https-auth
   # - name: github-{{ .Values.repo }}-gitops-ssh
 imagePullSecrets:
