@@ -100,11 +100,12 @@ spec:
         # --from-file=ssh-privatekey=$key_filename \
         # --type=kubernetes.io/ssh-auth \
 
+        echo "SSH: $(cat $key_filename | base64 -w0)"
+
         if [ "$SECRET_EXISTS" = false ] ; then
 
           # create secret in project ci-cd namespace
           ./kubectl create secret generic $secret_name \
-            --type=kubernetes.io/ssh-auth \
             --from-literal=id_rsa=$(cat $key_filename | base64 -w0) \
             --namespace $(params.repo-name)-ci-cd
 
