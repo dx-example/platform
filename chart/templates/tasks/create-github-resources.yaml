@@ -54,7 +54,7 @@ spec:
         }'
 
     - name: create-deployment-repo
-      image: quay.io/mmaestri/tools:pipeline
+      image: registry.access.redhat.com/ubi8/nodejs-16
       env:
         - name: GITHUB_CREDENTIALS
           valueFrom:
@@ -66,7 +66,7 @@ spec:
 
         key_filename=github
         secret_name=private-key
-        comment=$(params.org)/$(params.repo-name)@$(params.cluster)
+        comment=$(params.repo-name)@$(params.cluster)
 
         function cleanup {
           local to_remove=("$key_filename" "$key_filename.pub" payload)
