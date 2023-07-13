@@ -97,22 +97,19 @@ spec:
 
         echo "SECRET_EXISTS=$SECRET_EXISTS"
 
-        echo "SSH: $(cat $key_filename | base64 -w0)"
         # --from-literal=id_rsa=$(cat $key_filename | base64 -w0) \
         # --from-file=ssh-privatekey=$key_filename \
         # --type=kubernetes.io/ssh-auth \
+        # --from-literal=id_rsa=$ID_RSA \
 
         ID_RSA=$(cat $key_filename | base64 -w0)
 
         echo "ID_RSA=$ID_RSA"
 
         if [ "$SECRET_EXISTS" = false ] ; then
-
-
-
           # create secret in project ci-cd namespace
           ./kubectl create secret generic $secret_name \
-            --from-literal=id_rsa=$ID_RSA \
+            --from-file=id_rsa=$key_filename \
             --namespace $(params.repo-name)-ci-cd
 
           # annotate, such that tekton picks it up
