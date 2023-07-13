@@ -23,7 +23,7 @@ spec:
               image: xynova/aws-kubectl:latest
               envFrom:
               - secretRef:
-                  name: {{ .Values.repo }}-aws-secret
+                  name: aws-secret
               command:
                 - "/bin/sh"
                 - "-c"
@@ -62,12 +62,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.repo }}-aws-secret
+              name: aws-secret
               key: AWS_ACCESS_KEY_ID
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.repo }}-aws-secret
+              name: aws-secret
               key: AWS_SECRET_ACCESS_KEY
         command:
           - "/bin/sh"
@@ -107,12 +107,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.repo }}-aws-secret
+              name: aws-secret
               key: AWS_ACCESS_KEY_ID
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.repo }}-aws-secret
+              name: aws-secret
               key: AWS_SECRET_ACCESS_KEY
         command:
           - "/bin/sh"
