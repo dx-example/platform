@@ -55,7 +55,7 @@ spec:
         #!/bin/sh
         cat <<EOF > .npmrc
         registry=http://verdaccio.verdaccio.svc.cluster.local:4873
-        //verdaccio.verdaccio.svc.cluster.local:4873/:_auth=YWRtaW46YWRtaW4xMjM=
+        http://verdaccio.verdaccio.svc.cluster.local:4873/:_auth=YWRtaW46YWRtaW4xMjM=
         strict-ssl=false
         ca=null
         network-timeout=10000
