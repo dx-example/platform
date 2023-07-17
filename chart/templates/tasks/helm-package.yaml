@@ -55,8 +55,9 @@ spec:
         echo -e "👉🏻 Linting"
         ./helm lint chart
         version=$(./yq '.version' chart/Chart.yaml)
-        echo "version: $version"
+        # echo "version: $version"
 
+        echo -n ""
         echo "👉🏻 Updating dependencies"
 
         cd chart/
@@ -65,20 +66,22 @@ spec:
         cd ..
 
         echo "👉🏻 Packaging"
+        ./helm package --dependency-update chart/
+        echo -n ""
 
         if [ "$(params.revision_type)" = "main" ]; then
           name=$(params.application_name)
-          echo "👉🏻 Uploading chart for main"
+          echo "👉🏻 Uploading chart (main)"
           echo "👉🏻 Package (main): $name"
           curl -v --data-binary "@$name-$version.tgz" $(params.chart_repo)
-          echo -e ""
+          echo -n ""
         else
           echo "👉🏻 Uploading chart (branch)"
           name=$(params.application_name)-$(params.revision_type)
-          echo "👉🏻 Package: $name"
+          echo "👉🏻 Package (branch): $name"
           mv $(params.application_name)-$version.tgz $name.tgz
           ls -ls
           curl -v --data-binary "@$name.tgz" $(params.chart_repo)
-          echo -e ""
+          echo -n ""
         fi
         echo -n `./helm show chart chart | grep version: | awk '{print $2}'` | tee $(results.chart_version.path);
