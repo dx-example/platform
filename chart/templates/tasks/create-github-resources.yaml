@@ -129,6 +129,14 @@ spec:
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
             -d @payload
+
+          # post here also to create a key in the environments repository
+          curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
+            -L https://api.github.com/repos/$(params.org)/environments/keys \
+            -H "Accept: application/vnd.github.v3+json" \
+            -u $(params.org):$GITHUB_CREDENTIALS \
+            -H 'cache-control: no-cache' \
+            -d @payload
         else
           echo "Skipped because the secret already exists"
         fi
