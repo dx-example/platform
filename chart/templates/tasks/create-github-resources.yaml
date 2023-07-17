@@ -147,7 +147,7 @@ spec:
             -H "Accept: application/vnd.github.v3+json" \
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
-            -d @payload
+            -d @payloadenv
         else
           echo "Skipped because the secret already exists"
         fi
