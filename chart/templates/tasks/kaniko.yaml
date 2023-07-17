@@ -63,6 +63,7 @@ spec:
         fetch-retry-maxtimeout=5000
         fetch-retries=2
         EOF
+        npm config fix
         npm ping
     - name: build-and-push
       workingDir: $(workspaces.source.path)
