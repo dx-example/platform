@@ -43,44 +43,35 @@ spec:
         curl -Lsk https://mirror.openshift.com/pub/openshift-v4/clients/helm/latest/helm-linux-amd64 -o helm && chmod +x helm
         curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
 
-        echo -e "👉🏻 Tracking revision (via appVersion in Chart.yaml)"
+        echo -e "👉🏻 Adding revision (appVersion) to the Chart.yaml file"
         export SHA=$(params.truncated_sha)
         ./yq e -i ".appVersion = env(SHA)" chart/Chart.yaml
+
+        echo -e ""
+        echo -e "👉🏻 This is the Chart.yaml for the $(params.application_name)"
         cat chart/Chart.yaml
-          
-
-        # if not main branch, set test as true
-        if [ "$(params.revision_type)" != "main" ]; then
-          echo "👉🏻 Set test enabled=true"
-          echo -e "\nenvironment:" >> chart/values.yaml
-          echo "  test:" >> chart/values.yaml
-          echo "    enabled: true" >> chart/values.yaml
-          cat chart/values.yaml
-        fi
-
+        echo -e ""
 
         echo -e "👉🏻 Linting"
         ./helm lint chart
         version=$(./yq '.version' chart/Chart.yaml)
         echo "version: $version"
 
-        echo "👉🏻 Add dependencies"
+        echo "👉🏻 Updating dependencies"
 
         cd chart/
-        ../helm repo add bitnami https://charts.bitnami.com/bitnami
+        # ../helm repo add bitnami https://charts.bitnami.com/bitnami
         ../helm dependency update
         cd ..
 
         echo "👉🏻 Packaging"
-
-        ./helm package --dependency-update chart/
 
         if [ "$(params.revision_type)" = "main" ]; then
           name=$(params.application_name)
           echo "👉🏻 Uploading chart for main"
           echo "👉🏻 Package (main): $name"
           curl -v --data-binary "@$name-$version.tgz" $(params.chart_repo)
-
+          echo -e ""
         else
           echo "👉🏻 Uploading chart (branch)"
           name=$(params.application_name)-$(params.revision_type)
@@ -88,5 +79,6 @@ spec:
           mv $(params.application_name)-$version.tgz $name.tgz
           ls -ls
           curl -v --data-binary "@$name.tgz" $(params.chart_repo)
+          echo -e ""
         fi
         echo -n `./helm show chart chart | grep version: | awk '{print $2}'` | tee $(results.chart_version.path);
