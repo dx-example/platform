@@ -18,10 +18,10 @@ spec:
       description: Name of the application
     - name: chart_repo
       description: "Helm Chart Repo"
-      default: "http://chartmuseum.tools.svc.cluster.local:8080/api/charts"
+      default: "http://chartmuseum.platform.svc.cluster.local:8080/api/charts"
     - name: subdirectory
       description: Subdirectory inside the `source` Workspace
-      default: ''
+      default: ""
       type: string
     - name: revision_type
       description: type of branch, either main or non main
@@ -29,7 +29,7 @@ spec:
     - name: truncated_sha
       description: revision commit id
       type: string
-      default: ''
+      default: ""
   results:
     - name: chart_version
       description: Version of the helm chart
@@ -48,7 +48,7 @@ spec:
         ./yq e -i ".appVersion = env(SHA)" chart/Chart.yaml
         cat chart/Chart.yaml
           
-        
+
         # if not main branch, set test as true
         if [ "$(params.revision_type)" != "main" ]; then
           echo "👉🏻 Set test enabled=true"
@@ -65,16 +65,16 @@ spec:
         echo "version: $version"
 
         echo "👉🏻 Add dependencies"
-        
+
         cd chart/
         ../helm repo add bitnami https://charts.bitnami.com/bitnami
         ../helm dependency update
         cd ..
 
         echo "👉🏻 Packaging"
-        
+
         ./helm package --dependency-update chart/
-        
+
         if [ "$(params.revision_type)" = "main" ]; then
           name=$(params.application_name)
           echo "👉🏻 Uploading chart for main"
