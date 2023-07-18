@@ -48,15 +48,14 @@ spec:
   steps:
     - name: version-bump
       securityContext:
-        runAsUser: 1000
-      workingDir: /home/nonroot
+        runAsUser: 0
+      workingDir: /root
       image: registry.access.redhat.com/ubi8/nodejs-16
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
           
-          mkdir /home/nonroot/.ssh
-          ln -s $(credentials.path)/.ssh /home/nonroot/.ssh
+          ln -s $(credentials.path)/.ssh /root/.ssh
 
           echo "👉🏻 Cloning environments repository"
           git clone $(params.environments)
