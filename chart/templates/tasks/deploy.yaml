@@ -49,12 +49,13 @@ spec:
     - name: version-bump
       securityContext:
         runAsUser: 0
-      workingDir: /root
       image: registry.access.redhat.com/ubi8/nodejs-16
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
           
+          git config core.sshCommand "ssh -vvv"
+
           mkdir ~/.ssh
           touch ~/.ssh/known_hosts
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
