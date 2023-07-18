@@ -120,16 +120,6 @@ spec:
 
         EOF
 
-        cat << EOF > payloadenv
-
-        {
-          "title": "test",
-          "key": "$(cat $key_filename.pub) test",
-          "read_only": false
-        }
-
-        EOF
-
         if [ "$SECRET_EXISTS" = false ] ; then
           echo "Requesting to GitHub API for $(params.org)/$(params.repo-name)"
           curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
@@ -138,13 +128,83 @@ spec:
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
             -d @payload
+        else
+          echo "Skipped because the secret already exists"
+        fi
 
+    - name: create-environments-key
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      env:
+        - name: GITHUB_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: github-admin-auth
+              key: GITHUB_CREDENTIALS
+      script: |
+        #!/usr/bin/env bash
+
+        key_filename=envs
+        secret_name=git-credentials-envs
+        comment=$(params.repo-name)@$(params.cluster)
+
+        function cleanup {
+          local to_remove=("$key_filename" "$key_filename.pub" payload)
+          echo
+          echo "removing ${to_remove[*]}"
+
+          for filename in "${to_remove[@]}"; do
+            # -f makes it not failing when missing
+            rm -f "$filename"
+          done
+        }
+
+        trap cleanup EXIT
+
+        cd /tmp
+        echo "Generating ssh key $comment"
+        ssh-keygen -t rsa -b 2048 -C $comment -P "" -f $key_filename
+
+        # Download kubectl
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl
+
+        SECRET_EXISTS=false
+        if ./kubectl get secret $secret_name --namespace $(params.repo-name)-ci-cd > /dev/null 2>&1; then
+          SECRET_EXISTS=true
+        fi
+
+        echo "SECRET_EXISTS=$SECRET_EXISTS"
+
+        if [ "$SECRET_EXISTS" = false ] ; then
+          # create secret in project ci-cd namespace
+          ./kubectl create secret generic $secret_name \
+            --from-file=id_rsa=$key_filename \
+            --namespace $(params.repo-name)-ci-cd
+
+          # annotate, such that tekton picks it up
+          ./kubectl annotate secret $secret_name \
+            --namespace $(params.repo-name)-ci-cd \
+            tekton.dev/git-0=github.com \
+            --overwrite
+        fi
+
+        cat << EOF > payload
+
+        {
+          "title": "$comment",
+          "key": "$(cat $key_filename.pub) $comment",
+          "read_only": false
+        }
+
+        EOF
+
+        if [ "$SECRET_EXISTS" = false ] ; then
+          echo "Requesting to GitHub API for $(params.org)/environments"
           curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
             -L https://api.github.com/repos/$(params.org)/environments/keys \
             -H "Accept: application/vnd.github.v3+json" \
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
-            -d @payloadenv
+            -d @payload
         else
           echo "Skipped because the secret already exists"
         fi
