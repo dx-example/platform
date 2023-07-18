@@ -76,7 +76,7 @@ spec:
           ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
           # ln -s $(credentials.path)/.ssh ~/.ssh/
 
-          echo "👉🏻 Cloning environments repository"
+          echo "👉🏻 Cloning $(params.environments)"
           # git config core.sshCommand "ssh -vvv"
           git clone $(params.environments)
 
