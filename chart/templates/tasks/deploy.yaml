@@ -73,11 +73,12 @@ spec:
         if [ "$(params.revision_type)" = "main" ]; then
           
           pwd
+          echo "HOME: $HOME"
 
           if [ "${WORKSPACE_SSH_DIRECTORY_BOUND}" = "true" ] ; then
-            cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "${PARAM_USER_HOME}"/.ssh
-            chmod 700 "${PARAM_USER_HOME}"/.ssh
-            chmod -R 400 "${PARAM_USER_HOME}"/.ssh/*
+            cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "$HOME"/.ssh
+            chmod 700 $HOME/.ssh
+            chmod -R 400 $HOME/.ssh/*
           fi
 
           git config core.sshCommand "ssh -vvv"
