@@ -124,7 +124,7 @@ spec:
 
         {
           "title": "test",
-          "key": "$(cat $key_filename.pub) $comment",
+          "key": "$(cat $key_filename.pub) test",
           "read_only": false
         }
 
