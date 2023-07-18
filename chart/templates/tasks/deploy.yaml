@@ -78,10 +78,8 @@ spec:
 
           ssh -T git@github.com
           echo "👉🏻 Cloning $(params.environments)"
-          # git config core.sshCommand "ssh -vvv"
           git clone $(params.environments)
-
-          ls -ls $(params.path)
+          ls -ls
 
           git config --global user.name "Tekton Pipeline"
           git config --global user.email "tekton@platform"
