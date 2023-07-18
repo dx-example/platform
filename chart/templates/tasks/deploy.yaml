@@ -32,17 +32,16 @@ spec:
       description: type of branch
     - name: truncated_sha
       description: revision commit id
-    # - name: GIT_USER_NAME
-    #   type: string
-    #   description: |
-    #     Git user name for performing git operation.
-    #   default: ""
-
-    # - name: GIT_USER_EMAIL
-    #   type: string
-    #   description: |
-    #     Git user email for performing git operation.
-    #   default: ""
+    - name: git-username
+      type: string
+      description: |
+        Git user name for performing git operation.
+      default: "Tekton Pipeline"
+    - name: git-email
+      type: string
+      description: |
+        Git user email for performing git operation.
+      default: "tekton@platform"
   workspaces:
     - name: ssh-directory
       optional: true
@@ -65,24 +64,22 @@ spec:
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
-          
-          pwd
-          echo "HOME: $HOME"
 
+          # prep
           cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
           chmod 700 $HOME/.ssh
           chmod -R 400 $HOME/.ssh/*
-
           ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
-          # ln -s $(credentials.path)/.ssh ~/.ssh/
 
-          ssh -T git@github.com
+          # clone repository
           echo "👉🏻 Cloning $(params.environments)"
-          git clone $(params.environments) .
-          ls -ls
+          ssh -T git@github.com
+          git clone $(params.environments)
+          cd environments
+          ls -ls $(params.path)
 
-          git config --global user.name "Tekton Pipeline"
-          git config --global user.email "tekton@platform"
+          git config --global user.name "$(params.git-username)"
+          git config --global user.email "$(params.git-email)"
           git config --global push.default simple
 
           # Download yq
