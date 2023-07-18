@@ -78,20 +78,18 @@ spec:
 
           ssh -T git@github.com
           echo "👉🏻 Cloning $(params.environments)"
-          git clone $(params.environments)
+          git clone $(params.environments) .
           ls -ls
 
           git config --global user.name "Tekton Pipeline"
           git config --global user.email "tekton@platform"
           git config --global push.default simple
 
-          cd $(params.path)
-
           # Download yq
           curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
 
-          previous_chart_version=$(./yq '.deployment.chart' $(params.org)/$(params.application_name).yaml)
-          previous_version=$(./yq '.deployment.values.image.version' $(params.org)/$(params.application_name).yaml)
+          previous_chart_version=$(./yq '.deployment.chart' $(params.path)/$(params.application_name).yaml)
+          previous_version=$(./yq '.deployment.values.image.version' $(params.path)/$(params.application_name).yaml)
 
           echo "👉🏻 Get versions"
           echo "Chart: $previous_chart_version"
@@ -102,15 +100,15 @@ spec:
           export REVISION=$(params.truncated_sha)
           
           echo "👉🏻 Replace old version with updated on"
-          ./yq e -i ".deployment.chart = env(CHART)" $(params.org)/$(params.application_name).yaml
-          ./yq e -i ".deployment.values.image.version = env(VERSION)" $(params.org)/$(params.application_name).yaml
-          ./yq e -i ".deployment.values.image.revision = env(REVISION)" $(params.org)/$(params.application_name).yaml
+          ./yq e -i ".deployment.chart = env(CHART)" $(params.path)/$(params.application_name).yaml
+          ./yq e -i ".deployment.values.image.version = env(VERSION)" $(params.path)/$(params.application_name).yaml
+          ./yq e -i ".deployment.values.image.revision = env(REVISION)" $(params.path)/$(params.application_name).yaml
 
           echo "👉🏻 Updated file"
-          cat $(params.org)/$(params.application_name).yaml
+          cat $(params.path)/$(params.application_name).yaml
 
           echo "👉🏻 Pushing to repo"
-          git commit -am "👉🏻 Automated commit - Deployment of $(params.org)/$(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
+          git commit -am "👉🏻 Automated commit - Deployment of $(params.path)/$(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
           git push
 
           echo -n $previous_version | tee $(results.previous_version.path)
