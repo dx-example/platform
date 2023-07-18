@@ -55,6 +55,7 @@ spec:
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
           
+          mkdir /home/nonroot/.ssh
           ln -s $(credentials.path)/.ssh /home/nonroot/.ssh
 
           echo "👉🏻 Cloning environments repository"
