@@ -113,6 +113,11 @@ spec:
             --namespace $(params.repo-name)-ci-cd \
             tekton.dev/git-0=github.com \
             --overwrite
+
+          ./kubectl annotate secret $secret_name-environments \
+            --namespace $(params.repo-name)-ci-cd \
+            tekton.dev/git-0=github.com \
+            --overwrite
         fi
 
         cat << EOF > payload
