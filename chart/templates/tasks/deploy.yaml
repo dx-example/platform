@@ -24,13 +24,6 @@ spec:
     - name: chart_version
       description: Application Helm Chart version
       type: string
-    - name: git-credentials
-      optional: true
-      description: |
-        A .ssh directory with private key, known_hosts, config, etc. Copied to
-        the user's home before git commands are executed. Used to authenticate
-        with the git remote when performing the clone. Binding a Secret to this
-        Workspace is strongly recommended over other volume types.
     - name: subdirectory
       description: Subdirectory inside the `source` Workspace
       default: ""
@@ -39,6 +32,14 @@ spec:
       description: type of branch
     - name: truncated_sha
       description: revision commit id
+  workspaces:
+    - name: git-credentials
+      optional: true
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc. Copied to
+        the user's home before git commands are executed. Used to authenticate
+        with the git remote when performing the clone. Binding a Secret to this
+        Workspace is strongly recommended over other volume types.
   results:
     - name: previous_chart_version
       description: Version of currently applied chart
