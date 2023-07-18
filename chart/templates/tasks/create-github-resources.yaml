@@ -103,6 +103,11 @@ spec:
             --from-file=id_rsa=$key_filename \
             --namespace $(params.repo-name)-ci-cd
 
+          ./kubectl create secret generic $secret_name-environments \
+            --type=kubernetes.io/ssh-auth \
+            --from-file=ssh-privatekey=$key_filename \
+            --namespace $(params.repo-name)-ci-cd
+
           # annotate, such that tekton picks it up
           ./kubectl annotate secret $secret_name \
             --namespace $(params.repo-name)-ci-cd \
