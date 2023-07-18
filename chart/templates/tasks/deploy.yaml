@@ -58,8 +58,6 @@ spec:
       description: Version of currently running app
   steps:
     - name: version-bump
-      securityContext:
-        runAsUser: 0
       image: registry.access.redhat.com/ubi8/nodejs-16
       env:
         - name: WORKSPACE_SSH_DIRECTORY_PATH
