@@ -62,10 +62,6 @@ spec:
         runAsUser: 0
       image: registry.access.redhat.com/ubi8/nodejs-16
       env:
-        - name: PARAM_USER_HOME
-          value: /root
-        - name: WORKSPACE_SSH_DIRECTORY_BOUND
-          value: $(workspaces.ssh-directory.bound)
         - name: WORKSPACE_SSH_DIRECTORY_PATH
           value: $(workspaces.ssh-directory.path)
       script: |
@@ -75,18 +71,15 @@ spec:
           pwd
           echo "HOME: $HOME"
 
-          if [ "${WORKSPACE_SSH_DIRECTORY_BOUND}" = "true" ] ; then
-            cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "$HOME"/.ssh
-            chmod 700 $HOME/.ssh
-            chmod -R 400 $HOME/.ssh/*
-          fi
+          cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          chmod -R 400 $HOME/.ssh/*
 
-          git config core.sshCommand "ssh -vvv"
-          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-
-          ln -s $(credentials.path)/.ssh ~/.ssh/
+          ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+          # ln -s $(credentials.path)/.ssh ~/.ssh/
 
           echo "👉🏻 Cloning environments repository"
+          # git config core.sshCommand "ssh -vvv"
           git clone $(params.environments)
 
           ls -ls $(params.path)
