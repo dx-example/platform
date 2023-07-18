@@ -103,18 +103,8 @@ spec:
             --from-file=id_rsa=$key_filename \
             --namespace $(params.repo-name)-ci-cd
 
-          ./kubectl create secret generic $secret_name-environments \
-            --type=kubernetes.io/ssh-auth \
-            --from-file=ssh-privatekey=$key_filename \
-            --namespace $(params.repo-name)-ci-cd
-
           # annotate, such that tekton picks it up
           ./kubectl annotate secret $secret_name \
-            --namespace $(params.repo-name)-ci-cd \
-            tekton.dev/git-0=github.com \
-            --overwrite
-
-          ./kubectl annotate secret $secret_name-environments \
             --namespace $(params.repo-name)-ci-cd \
             tekton.dev/git-0=github.com \
             --overwrite
@@ -130,6 +120,16 @@ spec:
 
         EOF
 
+        cat << EOF > payloadenv
+
+        {
+          "title": "test",
+          "key": "$(cat $key_filename.pub) $comment",
+          "read_only": false
+        }
+
+        EOF
+
         if [ "$SECRET_EXISTS" = false ] ; then
           echo "Requesting to GitHub API for $(params.org)/$(params.repo-name)"
           curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
@@ -138,6 +138,13 @@ spec:
             -u $(params.org):$GITHUB_CREDENTIALS \
             -H 'cache-control: no-cache' \
             -d @payload
+
+          curl -X POST -u $(params.org):$GITHUB_CREDENTIALS \
+            -L https://api.github.com/repos/$(params.org)/environments/keys \
+            -H "Accept: application/vnd.github.v3+json" \
+            -u $(params.org):$GITHUB_CREDENTIALS \
+            -H 'cache-control: no-cache' \
+            -d @payloadenv
         else
           echo "Skipped because the secret already exists"
         fi
