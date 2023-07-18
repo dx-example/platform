@@ -56,6 +56,7 @@ spec:
         if [ "$(params.revision_type)" = "main" ]; then
           
           mkdir /root/.ssh
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
           ln -s $(credentials.path)/.ssh /root/.ssh
 
           echo "👉🏻 Cloning environments repository"
