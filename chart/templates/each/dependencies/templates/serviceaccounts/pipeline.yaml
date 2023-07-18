@@ -10,7 +10,6 @@ metadata:
   namespace: {{ .Values.repo }}-ci-cd
 secrets:
   - name: git-credentials
-  - name: git-credentials-environments
   # - name: github-{{ .Values.repo }}-https-auth
   # - name: github-{{ .Values.repo }}-gitops-ssh
 imagePullSecrets:
