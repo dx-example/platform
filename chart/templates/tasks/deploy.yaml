@@ -33,7 +33,7 @@ spec:
     - name: truncated_sha
       description: revision commit id
   workspaces:
-    - name: git-credentials
+    - name: ssh-directory
       optional: true
       description: |
         A .ssh directory with private key, known_hosts, config, etc. Copied to
