@@ -32,6 +32,17 @@ spec:
       description: type of branch
     - name: truncated_sha
       description: revision commit id
+    # - name: GIT_USER_NAME
+    #   type: string
+    #   description: |
+    #     Git user name for performing git operation.
+    #   default: ""
+
+    # - name: GIT_USER_EMAIL
+    #   type: string
+    #   description: |
+    #     Git user email for performing git operation.
+    #   default: ""
   workspaces:
     - name: ssh-directory
       optional: true
@@ -50,15 +61,28 @@ spec:
       securityContext:
         runAsUser: 0
       image: registry.access.redhat.com/ubi8/nodejs-16
+      env:
+        - name: PARAM_USER_HOME
+          value: /root
+        - name: WORKSPACE_SSH_DIRECTORY_BOUND
+          value: $(workspaces.ssh-directory.bound)
+        - name: WORKSPACE_SSH_DIRECTORY_PATH
+          value: $(workspaces.ssh-directory.path)
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
           
-          git config core.sshCommand "ssh -vvv"
+          pwd
 
-          mkdir ~/.ssh
-          touch ~/.ssh/known_hosts
+          if [ "${WORKSPACE_SSH_DIRECTORY_BOUND}" = "true" ] ; then
+            cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "${PARAM_USER_HOME}"/.ssh
+            chmod 700 "${PARAM_USER_HOME}"/.ssh
+            chmod -R 400 "${PARAM_USER_HOME}"/.ssh/*
+          fi
+
+          git config core.sshCommand "ssh -vvv"
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+
           ln -s $(credentials.path)/.ssh ~/.ssh/
 
           echo "👉🏻 Cloning environments repository"
