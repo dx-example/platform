@@ -87,12 +87,11 @@ spec:
           previous_chart_version=$(./yq '.info.chart' $(params.path)/$(params.application_name).yaml)
           previous_version=$(./yq '.info.values.image.version' $(params.path)/$(params.application_name).yaml)
 
-          echo -n ""
           echo "👉🏻 Get versions"
           echo "Chart: $previous_chart_version"
           echo "Application: $previous_version"
 
-          export CHART=$previous_chart_version
+          export CHART=$(params.chart_version)
           export VERSION=$(params.version)
           export REVISION=$(params.truncated_sha)
           

@@ -8,23 +8,22 @@ metadata:
 spec:
   description: Identifies runtime, extracts the version number and stores it in result.
   params:
-  - description: revision type
-    name: revision_type
-    type: string
-  - default: ""
-    description: Subdirectory inside the `source` Workspace
-    name: subdirectory
-    type: string
+    - description: revision type
+      name: revision_type
+      type: string
+    - default: ""
+      description: Subdirectory inside the `source` Workspace
+      name: subdirectory
+      type: string
   results:
-  - name: version
-    description: parsed version from manifest files
-  - name: runtime
-    description: detected runtime
+    - name: version
+      description: parsed version from manifest files
+    - name: runtime
+      description: detected runtime
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
   steps:
-
     - name: detect-version
       workingDir: $(workspaces.source.path)/$(params.subdirectory)
       image: registry.access.redhat.com/ubi8/toolbox:8.5
