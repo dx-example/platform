@@ -24,7 +24,7 @@ spec:
     - name: chart_version
       description: Application Helm Chart version
       type: string
-    - name: ssh-directory
+    - name: git-credentials
       optional: true
       description: |
         A .ssh directory with private key, known_hosts, config, etc. Copied to
