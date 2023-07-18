@@ -48,6 +48,8 @@ spec:
   steps:
     - name: version-bump
       image: registry.access.redhat.com/ubi8/nodejs-16
+      securityContext:
+        runAsUser: 0
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
