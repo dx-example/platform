@@ -85,7 +85,7 @@ spec:
           curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
 
           previous_chart_version=$(./yq '.info.chart' $(params.path)/$(params.application_name).yaml)
-          previous_version=$(./yq '.info.values.image.version' $(params.path)/$(params.application_name).yaml)
+          previous_version=$(./yq '.info.version' $(params.path)/$(params.application_name).yaml)
 
           echo "👉🏻 Get versions"
           echo "Chart: $previous_chart_version"
@@ -97,8 +97,8 @@ spec:
           
           echo "👉🏻 Replace old version with updated on"
           ./yq e -i ".info.chart = env(CHART)" $(params.path)/$(params.application_name).yaml
-          ./yq e -i ".info.values.image.version = env(VERSION)" $(params.path)/$(params.application_name).yaml
-          ./yq e -i ".info.values.image.revision = env(REVISION)" $(params.path)/$(params.application_name).yaml
+          ./yq e -i ".info.version = env(VERSION)" $(params.path)/$(params.application_name).yaml
+          ./yq e -i ".info.revision = env(REVISION)" $(params.path)/$(params.application_name).yaml
 
           echo -n ""
           echo "👉🏻 Updated file"
