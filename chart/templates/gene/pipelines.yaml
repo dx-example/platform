@@ -17,7 +17,7 @@ spec:
                   secretName: github-environments
                   key: password
           - git:
-              repoURL: https://github.com/{{ .Values.org }}/environments.git
+              repoURL: https://github.com/dx-book/environments.git
               revision: main
               files:
                 - path: "applications/{{`{{ repository }}`}}.yaml"
@@ -32,7 +32,7 @@ spec:
           releaseName: "tkn-{{`{{ repository }}-{{ info.name }}`}}"
           values: |
             domain: {{ .Values.domain }}
-            org: "{{ .Values.org }}"
+            org: "dx-book"
             repo: "{{`{{ repository }}`}}"
             team: "{{`{{ info.team }}`}}"
             name: "{{`{{ info.name }}`}}"
@@ -41,7 +41,7 @@ spec:
               region: "{{ .Values.aws.region }}"
             values: |
               {{`{{ info.values }}`}}
-        repoURL: https://github.com/{{ .Values.org }}/{{`{{ repository }}`}}
+        repoURL: https://github.com/dx-book/{{`{{ repository }}`}}
         targetRevision: main
         path: pipeline
       destination:

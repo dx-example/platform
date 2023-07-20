@@ -18,7 +18,7 @@ spec:
                   secretName: github-environments
                   key: password
           - git:
-              repoURL: https://github.com/{{ .Values.org }}/environments.git
+              repoURL: https://github.com/dx-book/environments.git
               revision: main
               files:
                 - path: "applications/{{`{{ repository }}`}}.yaml"

@@ -17,7 +17,7 @@ spec:
                   secretName: github-environments
                   key: password
           - git:
-              repoURL: https://github.com/{{ .Values.org }}/environments.git
+              repoURL: https://github.com/dx-book/environments.git
               revision: main
               files:
                 - path: "applications/{{`{{ repository }}`}}.yaml"
@@ -33,7 +33,7 @@ spec:
           values: |
             domain: {{ .Values.domain }}
             root: {{ .Values.root }}
-            org: {{ .Values.org }}
+            org: dx-book
             name: "{{`{{ info.name }}`}}"
             repo: "{{`{{ repository }}`}}"
             team: "{{`{{ info.team }}`}}"
@@ -43,7 +43,7 @@ spec:
               region: "{{ .Values.aws.region }}"
             values: |
               {{`{{ info.values }}`}}
-        repoURL: "https://github.com/{{ .Values.org }}/platform.git"
+        repoURL: "https://github.com/dx-book/platform.git"
         targetRevision: main
         path: chart/templates/each/dependencies
       destination:
