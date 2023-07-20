@@ -162,7 +162,7 @@ spec:
             repoURL: https://github.com/$(params.org)/$(params.application_name)
             targetRevision: $(params.revision_type)
             helm:
-              releaseName: $(params.application_name)-$(params.revision_type)
+              releaseName: $(params.revision_type)
               values: | 
                 name: "$(params.application_name)"
                 team: "$(params.team)"
