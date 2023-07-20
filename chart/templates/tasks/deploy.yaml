@@ -60,7 +60,6 @@ spec:
         The application source code files, we'll use this folder to clone the environments
         repository, extract the metadata to provide to the application
         and cleanup afterall
-      optional: false
   results:
     - name: previous_chart_version
       description: Version of currently applied chart
