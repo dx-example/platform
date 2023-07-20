@@ -31,6 +31,8 @@ spec:
       description: detected runtime
     - name: shared
       description: the shared values from the environments/shared.yaml
+    - name: service
+      description: the service metadata values from the environments repository
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
@@ -42,7 +44,7 @@ spec:
         with the git remote when performing the clone. Binding a Secret to this
         Workspace is strongly recommended over other volume types.
   steps:
-    - name: detect-version
+    - name: version
       workingDir: $(workspaces.source.path)/$(params.subdirectory)
       image: registry.access.redhat.com/ubi8/toolbox:8.5
       script: |
@@ -71,7 +73,7 @@ spec:
         printf %s "$version" >> /tekton/results/version
         printf %s "$runtime" >> /tekton/results/runtime
 
-    - name: environments
+    - name: environment
       image: registry.access.redhat.com/ubi8/nodejs-16
       env:
         - name: WORKSPACE_SSH_DIRECTORY_PATH
@@ -87,14 +89,16 @@ spec:
         ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
 
         ssh -T git@github.com
-        git clone $(params.environments)
+        git clone --quiet $(params.environments) > /dev/null
         cd environments
 
-        echo -e "👉🏻 Shared values" 
-        cat shared.yaml
-
-        echo -e "" 
+        echo -e "\n"
         echo -e "👉🏻 Service metadata" 
         cat applications/$(params.repository).yaml
 
+        echo -e "\n"
+        echo -e "👉🏻 Shared values" 
+        cat shared.yaml
+
         printf %s "$(cat shared.yaml)" >> /tekton/results/shared
+        printf %s "$(cat applications/$(params.repository).yaml)" >> /tekton/results/service
