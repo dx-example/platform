@@ -69,22 +69,25 @@ spec:
           value: $(workspaces.ssh-directory.path)
       script: |
         #!/bin/sh
+        # here we'll clone the environments repository and bump the version
+        # of the application, with the version provided by the application
+        # either in the package.json file or any other means identified by the task identify
+        # also we change the metadata file with the chart version on the Chart.yaml
+
+        cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+        chmod 700 $HOME/.ssh
+        chmod -R 400 $HOME/.ssh/*
+        ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+
+        # clone repository
+        echo "👉🏻 Cloning $(params.environments)"
+        ssh -T git@github.com
+        git clone $(params.environments)
+        cp -R environments $(workspaces.messages.path)
+
         if [ "$(params.revision_type)" = "main" ]; then
 
-          # prep
-          cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
-          chmod 700 $HOME/.ssh
-          chmod -R 400 $HOME/.ssh/*
-          ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
-
-          # clone repository
-          echo "👉🏻 Cloning $(params.environments)"
-          ssh -T git@github.com
-          git clone $(params.environments)
-          cp -R environments $(workspaces.messages.path)
           cd environments
-
-
           git config --global user.name "$(params.git-username)"
           git config --global user.email "$(params.git-email)"
           git config --global push.default simple
@@ -131,7 +134,9 @@ spec:
       script: |
         #!/bin/sh
 
-        ls $(workspaces.messages.path) -ls
+        echo "PATH: $(workspaces.messages.path)"
+        ls -ls /tmp
+        ls -ls $(workspaces.messages.path)
 
         cat << EOF > application.yaml
         apiVersion: argoproj.io/v1alpha1
