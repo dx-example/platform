@@ -80,25 +80,41 @@ spec:
           value: $(workspaces.ssh-directory.path)
       script: |
         #!/bin/sh
-        # here we'll clone the environments repository
-        # and make it available within this workspace for later usage
-
+        # Copy the SSH directory from a path specified by the WORKSPACE_SSH_DIRECTORY_PATH environment variable to the home directory.
         cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+
+        # Modify permissions of the .ssh directory to be read, write, and execute only by the owner (this is what the 700 permission means).
         chmod 700 $HOME/.ssh
+
+        # Modify permissions of all files in the .ssh directory to be read only by the owner (this is what the 400 permission means).
         chmod -R 400 $HOME/.ssh/*
+
+        # Run ssh-keyscan to get the public key of github.com and add it to the known_hosts file.
+        # This is a measure against man-in-the-middle attacks.
         ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
 
+        # Test the SSH connection to GitHub. 
+        # This line isn't necessary for the clone operation, it's likely used for debugging or to ensure that the SSH setup was successful.
         ssh -T git@github.com
-        git clone --quiet $(params.environments) > /dev/null
+
+        # Clone the repository from GitHub quietly (i.e., without logging the process in the console) and discard any other output.
+        git clone --quiet git@github.com:dx-book/environments.git > /dev/null
         cd environments
 
+        # Print the service metadata header.
         echo -e "\n"
         echo -e "👉🏻 Service metadata" 
-        cat applications/$(params.repository).yaml
+        cat applications/service-1.yaml
 
+        # Print the shared values file
         echo -e "\n"
         echo -e "👉🏻 Shared values" 
         cat shared.yaml
 
+        # Append the content of the 'shared.yaml' file to the '/tekton/results/shared' file.
+        # This is used as output or to share data between steps in a Tekton task.
         printf %s "$(cat shared.yaml)" >> /tekton/results/shared
-        printf %s "$(cat applications/$(params.repository).yaml)" >> /tekton/results/service
+
+        # Append the content of the 'service-1.yaml' file to the '/tekton/results/service' file.
+        # This is used as output or to share data between steps in a Tekton task.
+        printf %s "$(cat applications/service-1.yaml)" >> /tekton/results/service
