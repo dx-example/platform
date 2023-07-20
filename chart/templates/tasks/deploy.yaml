@@ -128,12 +128,12 @@ spec:
 
         else
           curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
-          cat $(params.shared) > shared.yaml
-          cat $(params.service) > service.yaml
+          echo "$(params.shared)" > shared.yaml
+          echo "$(params.service)" > service.yaml
 
           root=$(./yq '.root' shared.yaml)
           echo "ROOT: $root"
-          
+
           echo "Skipped due to non-main branch"
           echo -n "" | tee $(results.previous_version.path)
           echo -n "" | tee $(results.previous_chart_version.path)
