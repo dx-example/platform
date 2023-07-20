@@ -80,17 +80,16 @@ spec:
         # either in the package.json file or any other means identified by the task identify
         # also we change the metadata file with the chart version on the Chart.yaml
 
-        cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
-        chmod 700 $HOME/.ssh
-        chmod -R 400 $HOME/.ssh/*
-        ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
-
-        # clone repository
-        echo "👉🏻 Cloning $(params.environments)"
-        ssh -T git@github.com
-        git clone $(params.environments)
-
         if [ "$(params.revision_type)" = "main" ]; then
+          cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          chmod -R 400 $HOME/.ssh/*
+          ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+
+          # clone repository
+          echo "👉🏻 Cloning $(params.environments)"
+          ssh -T git@github.com
+          git clone --quiet $(params.environments)
 
           cd environments
           git config --global user.name "$(params.git-username)"
@@ -129,6 +128,9 @@ spec:
           echo -n $(params.revision_type) | tee $(results.previous_chart_version.path)
 
         else
+          echo "SHARED: $(params.shared)"
+          echo "ROOT: $(params.shared.root)"
+          echo "SVC: $(params.service.info.name)"
           echo "Skipped due to non-main branch"
           echo -n "" | tee $(results.previous_version.path)
           echo -n "" | tee $(results.previous_chart_version.path)
