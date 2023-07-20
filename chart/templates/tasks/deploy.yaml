@@ -164,18 +164,18 @@ spec:
             helm:
               releaseName: $(params.application_name)-$(params.revision_type)
               values: | 
-                name: $(params.application_name)
-                team: $(params.team)
-                repo: $(params.repository)
+                name: "$(params.application_name)"
+                team: "$(params.team)"
+                repo: "$(params.repository)"
                 chart: null
-                domain: $(params.shared-domain)
-                revision: $(params.revision_type)
-                version: $(params.revision_type)
+                domain: "$(params.shared-domain)"
+                revision: "$(params.revision_type)"
+                version: "$(params.revision_type)"
                 root: null
                 org: null
                 aws:
-                  account: $(params.aws-account)
-                  region: $(params.aws-region)
+                  account: "$(params.aws-account)"
+                  region: "$(params.aws-region)"
           syncPolicy:
             automated:
               prune: true
