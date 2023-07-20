@@ -23,6 +23,10 @@ spec:
       type: string
     - name: service
       description: Service metadata from the environments repository
+    - name: aws-account
+      description: shared aws account
+    - name: aws-region
+      description: aws region
     - name: shared
       description: Shared values from the environments repository
       type: string
@@ -137,7 +141,7 @@ spec:
       script: |
         #!/bin/sh
 
-        echo "AWS: $(tasks.deploy.results.aws_account)"
+        echo "AWS: $(tasks.identify.results.aws_account)"
 
         cat << EOF > application.yaml
         apiVersion: argoproj.io/v1alpha1
@@ -161,14 +165,14 @@ spec:
                 team: $(./yq '.info.team' environments/$(params.path)/$(params.application_name).yaml)
                 repo: $(./yq '.info.repo' environments/$(params.path)/$(params.application_name).yaml)
                 chart: null # on purpose, as this is a branch, we do not store charts, but point the git folder instead
-                domain: $(./yq '.domain' environments/shared.yaml)
+                domain: $(params.shared-domain)
                 revision: $(params.revision_type)
                 version: $(params.revision_type)
-                root: $(./yq '.root' environments/shared.yaml)
-                org: $(./yq '.org' environments/shared.yaml)
+                root: null
+                org: null
                 aws:
-                  account: $(./yq '.aws.account' environments/shared.yaml)
-                  region: $(./yq '.aws.region' environments/shared.yaml)
+                  account: $(params.aws-account)
+                  region: $(params.aws-region)
           syncPolicy:
             automated:
               prune: true
