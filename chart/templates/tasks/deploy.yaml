@@ -149,14 +149,16 @@ spec:
                 chart: null
                 domain: null
                 revision: $(params.revision_type)
-                image:
-                  version: $(params.revision_type)
+                version: $(params.revision_type)
           syncPolicy:
             automated:
               prune: true
               selfHeal: true
+              allowEmpty: true
             syncOptions:
               - Validate=true
+              - CreateNamespace=false
+              - ApplyOutOfSyncOnly=false
         EOF
 
         if [ "$(params.revision_type)" != "main" ]; then
