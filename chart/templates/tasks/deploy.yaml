@@ -122,50 +122,44 @@ spec:
       image: bitnami/kubectl
       script: |
         #!/bin/sh
+
+        cd /tmp
+
+        cat << EOF > application.yaml
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: $(params.application_name)-$(params.revision_type)
+          namespace: argocd
+        spec:
+          destination:
+            namespace: $(params.org)-development
+            server: https://kubernetes.default.svc
+          project: default
+          source:
+            path: chart
+            repoURL: https://github.com/$(params.org)/$(params.application_name)
+            targetRevision: $(params.revision_type)
+            helm:
+              releaseName: $(params.application_name)-$(params.revision_type)
+              values: | 
+                name: $(params.application_name)
+                team: null
+                repo: null
+                chart: null
+                domain: null
+                revision: $(params.revision_type)
+                image:
+                  version: $(params.revision_type)
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - Validate=true
+        EOF
+
         if [ "$(params.revision_type)" != "main" ]; then
-          # todo: refactor, not pretty
-          cd /tmp
-          touch application.yaml
-          echo "apiVersion: argoproj.io/v1alpha1" >> application.yaml
-          echo "kind: Application" >> application.yaml
-          echo "metadata:" >> application.yaml
-          echo "  name: $(params.application_name)-$(params.revision_type)" >> application.yaml
-          echo "  namespace: argocd" >> application.yaml
-          echo "spec:" >> application.yaml
-          echo "  destination:" >> application.yaml
-          echo "    namespace: $(params.org)-development" >> application.yaml
-          echo "    server: https://kubernetes.default.svc" >> application.yaml
-          echo "  project: default" >> application.yaml
-          echo "  source:" >> application.yaml
-          echo "    path: chart" >> application.yaml
-          echo "    repoURL: https://github.com/$(params.org)/$(params.application_name)" >> application.yaml
-          echo "    targetRevision: $(params.revision_type)" >> application.yaml
-          echo "    helm:" >> application.yaml
-          echo "      releaseName: $(params.application_name)-$(params.revision_type)" >> application.yaml
-          echo "      values: | " >> application.yaml
-          echo "        revision: $(params.revision_type)" >> application.yaml
-          echo "        image:" >> application.yaml
-          echo "          version: $(params.revision_type)" >> application.yaml
-
-          echo "        environment:" >> application.yaml
-          echo "          test:" >> application.yaml
-          echo "            enabled: true" >> application.yaml
-          echo "        mongodb:" >> application.yaml
-          echo "          architecture: standalone" >> application.yaml
-          echo "          global:" >> application.yaml
-          echo "            namespaceOverride: $(params.org)-development" >> application.yaml
-          echo "          persistence:" >> application.yaml
-          echo "            enabled: false" >> application.yaml
-          echo "          auth:" >> application.yaml
-          echo "            enabled: false" >> application.yaml
-
-          echo "  syncPolicy:" >> application.yaml
-          echo "    automated:" >> application.yaml
-          echo "      prune: true" >> application.yaml
-          echo "      selfHeal: true" >> application.yaml
-          echo "    syncOptions:" >> application.yaml
-          echo "      - Validate=true" >> application.yaml
-
           cat application.yaml
           kubectl apply -f application.yaml
         fi
