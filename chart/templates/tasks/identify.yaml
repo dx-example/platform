@@ -29,12 +29,6 @@ spec:
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
-    - name: environments
-      description: |
-        The environment with the services metadata files
-        We'll use this workspace to clone the environments repository, 
-        extract the metadata to provide to the application, and cleanup afterall
-      optional: false
     - name: ssh-directory
       optional: true
       description: |
@@ -73,7 +67,6 @@ spec:
         printf %s "$runtime" >> /tekton/results/runtime
     - name: environments
       image: registry.access.redhat.com/ubi8/nodejs-16
-      workingDir: $(workspaces.environments.path)
       env:
         - name: WORKSPACE_SSH_DIRECTORY_PATH
           value: $(workspaces.ssh-directory.path)
