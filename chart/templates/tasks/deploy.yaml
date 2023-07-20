@@ -130,7 +130,7 @@ spec:
         else
           echo "SHARED: $(params.shared)"
           echo "ROOT: $(params.shared.root)"
-          echo "SVC: $(params.service.info.name)"
+          echo "SVC: $(params.service.info)"
           echo "Skipped due to non-main branch"
           echo -n "" | tee $(results.previous_version.path)
           echo -n "" | tee $(results.previous_chart_version.path)
