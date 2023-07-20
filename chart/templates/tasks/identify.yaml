@@ -21,6 +21,9 @@ spec:
       description: Subdirectory inside the `source` Workspace
       name: subdirectory
       type: string
+    - name: repository
+      description: github repository
+      type: string
   results:
     - name: version
       description: parsed version from manifest files
@@ -86,6 +89,12 @@ spec:
         ssh -T git@github.com
         git clone $(params.environments)
         cd environments
-        ls -ls
+
+        echo -e "👉🏻 Shared values" 
+        cat shared.yaml
+
+        echo -e "" 
+        echo -e "👉🏻 Service metadata" 
+        cat applications/$(params.repository).yaml
 
         printf %s "$(cat shared.yaml)" >> /tekton/results/shared
