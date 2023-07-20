@@ -163,7 +163,7 @@ spec:
               values: | 
                 name: $(params.application_name)
                 team: $(params.team)
-                repo: null
+                repo: $(params.application_name)
                 chart: null
                 domain: $(params.shared-domain)
                 revision: $(params.revision_type)
