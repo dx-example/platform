@@ -20,12 +20,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: $(params.repo-name)-aws-secret
+              name: aws-secret
               key: AWS_ACCESS_KEY_ID
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: $(params.repo-name)-aws-secret
+              name: aws-secret
               key: AWS_SECRET_ACCESS_KEY
       script: |
         #!/bin/sh
