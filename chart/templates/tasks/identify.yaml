@@ -23,6 +23,19 @@ spec:
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
+    - name: environments
+      description: |
+        The environment with the services metadata files
+        We'll use this workspace to clone the environments repository, 
+        extract the metadata to provide to the application, and cleanup afterall
+      optional: false
+    - name: ssh-directory
+      optional: true
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc. Copied to
+        the user's home before git commands are executed. Used to authenticate
+        with the git remote when performing the clone. Binding a Secret to this
+        Workspace is strongly recommended over other volume types.
   steps:
     - name: detect-version
       workingDir: $(workspaces.source.path)/$(params.subdirectory)
@@ -52,3 +65,22 @@ spec:
         echo "Detected version: $version"
         printf %s "$version" >> /tekton/results/version
         printf %s "$runtime" >> /tekton/results/runtime
+    - name: environments
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      workingDir: $(workspaces.environments.path)
+      env:
+        - name: WORKSPACE_SSH_DIRECTORY_PATH
+          value: $(workspaces.ssh-directory.path)
+      script: |
+        #!/bin/sh
+        # here we'll clone the environments repository
+        # and make it available within this workspace for later usage
+
+        cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+        chmod 700 $HOME/.ssh
+        chmod -R 400 $HOME/.ssh/*
+        ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+
+        ssh -T git@github.com
+        git clone $(params.environments)
+        ls -ls
