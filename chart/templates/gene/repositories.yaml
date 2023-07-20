@@ -12,7 +12,7 @@ spec:
                 - pathsExist:
                     [chart/Chart.yaml, pipeline/Chart.yaml, Dockerfile]
               github:
-                organization: {{ .Values.org }}
+                organization: dx-book
                 allBranches: false
                 tokenRef:
                   secretName: github-environments
