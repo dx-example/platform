@@ -33,6 +33,12 @@ spec:
       description: the shared values from the environments/shared.yaml
     - name: service
       description: the service metadata values from the environments repository
+    - name: shared-domain
+      description: the complete domain url
+    - name: shared-aws-account
+      description: the aws account
+    - name: shared-aws-region
+      description: the aws region
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
@@ -118,3 +124,15 @@ spec:
         # Append the content of the 'service-1.yaml' file to the '/tekton/results/service' file.
         # This is used as output or to share data between steps in a Tekton task.
         printf %s "$(cat applications/service-1.yaml)" >> /tekton/results/service
+
+        curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
+        echo "$(cat shared.yaml)" > shared.yaml
+        echo "$(cat applications/service-1.yaml)" > service.yaml
+
+        domain=$(./yq '.domain' shared.yaml)
+        aws_account=$(./yq '.aws.account' shared.yaml)
+        aws_region=$(./yq '.aws.region' shared.yaml)
+
+        echo -n "$domain" | tee $(results.shared-domain.path)
+        echo -n "$aws_account" | tee $(results.shared-aws-account.path)
+        echo -n "$aws_region" | tee $(results.shared-aws-region.path)

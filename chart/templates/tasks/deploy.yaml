@@ -65,14 +65,6 @@ spec:
       description: Version of currently applied chart
     - name: previous_version
       description: Version of currently running app
-    - name: shared-root
-      description: the root domain
-    - name: shared-domain
-      description: the complete domain url
-    - name: shared-aws-account
-      description: the aws account
-    - name: shared-aws-region
-      description: the aws region
   steps:
     - name: version-bump
       image: registry.access.redhat.com/ubi8/nodejs-16
@@ -135,15 +127,6 @@ spec:
           echo -n $(params.revision_type) | tee $(results.previous_chart_version.path)
 
         else
-          curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
-          echo "$(params.shared)" > shared.yaml
-          echo "$(params.service)" > service.yaml
-
-          root=$(./yq '.root' shared.yaml)
-          aws_account=$(./yq '.aws.account' shared.yaml)
-          aws_region=$(./yq '.aws.region' shared.yaml)
-          echo -n "$aws_account" | tee $(results.shared-aws-account.path)
-          echo -n "$aws_region" | tee $(results.shared-aws-region.path)
           echo -n "" | tee $(results.previous_version.path)
           echo -n "" | tee $(results.previous_chart_version.path)
         fi
