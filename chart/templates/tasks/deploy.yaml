@@ -50,6 +50,12 @@ spec:
         the user's home before git commands are executed. Used to authenticate
         with the git remote when performing the clone. Binding a Secret to this
         Workspace is strongly recommended over other volume types.
+    - name: messages
+      description: |
+        The folder where we write the message to. If no workspace
+        is provided then the message will not be written.
+      optional: true
+      mountPath: /tmp
   results:
     - name: previous_chart_version
       description: Version of currently applied chart
@@ -75,7 +81,9 @@ spec:
           echo "👉🏻 Cloning $(params.environments)"
           ssh -T git@github.com
           git clone $(params.environments)
+          cp -R environments $(workspaces.messages.path)
           cd environments
+
 
           git config --global user.name "$(params.git-username)"
           git config --global user.email "$(params.git-email)"
@@ -123,7 +131,7 @@ spec:
       script: |
         #!/bin/sh
 
-        cd /tmp
+        ls $(workspaces.messages.path) -ls
 
         cat << EOF > application.yaml
         apiVersion: argoproj.io/v1alpha1
