@@ -156,12 +156,17 @@ spec:
               releaseName: $(params.application_name)-$(params.revision_type)
               values: | 
                 name: $(params.application_name)
-                team: null
-                repo: null
-                chart: null
-                domain: null
+                team: $(./yq '.info.team' environments/$(params.path)/$(params.application_name).yaml)
+                repo: $(./yq '.info.repo' environments/$(params.path)/$(params.application_name).yaml)
+                chart: null # on purpose, as this is a branch, we do not store charts, but point the git folder instead
+                domain: $(./yq '.domain' environments/shared.yaml)
                 revision: $(params.revision_type)
                 version: $(params.revision_type)
+                root: $(./yq '.root' environments/shared.yaml)
+                org: $(./yq '.org' environments/shared.yaml)
+                aws:
+                  account: $(./yq '.aws.account' environments/shared.yaml)
+                  region: $(./yq '.aws.region' environments/shared.yaml)
           syncPolicy:
             automated:
               prune: true
