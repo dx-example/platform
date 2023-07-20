@@ -8,6 +8,12 @@ metadata:
 spec:
   description: Identifies runtime, extracts the version number and stores it in result.
   params:
+    - name: environments
+      description: GitOps environments repository git url
+      type: string
+    - name: path
+      description: Subpath containing the applications metadata yaml definition
+      type: string
     - description: revision type
       name: revision_type
       type: string
