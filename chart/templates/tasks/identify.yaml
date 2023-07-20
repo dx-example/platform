@@ -35,9 +35,9 @@ spec:
       description: the service metadata values from the environments repository
     - name: shared-domain
       description: the complete domain url
-    - name: shared-aws-account
+    - name: aws-account
       description: the aws account
-    - name: shared-aws-region
+    - name: aws-region
       description: the aws region
   workspaces:
     - name: source
@@ -134,5 +134,5 @@ spec:
         aws_region=$(./yq '.aws.region' shared.yaml)
 
         echo -n "$domain" | tee $(results.shared-domain.path)
-        echo -n "$aws_account" | tee $(results.shared-aws-account.path)
-        echo -n "$aws_region" | tee $(results.shared-aws-region.path)
+        echo -n "$aws_account" | tee $(results.aws-account.path)
+        echo -n "$aws_region" | tee $(results.aws-region.path)
