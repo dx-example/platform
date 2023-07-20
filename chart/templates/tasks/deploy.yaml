@@ -21,6 +21,11 @@ spec:
     - name: version
       description: Application version
       type: string
+    - name: service
+      description: Service metadata from the environments repository
+    - name: shared
+      description: Shared values from the environments repository
+      type: string
     - name: chart_version
       description: Application Helm Chart version
       type: string
