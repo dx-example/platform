@@ -104,13 +104,13 @@ spec:
         ssh -T git@github.com
 
         # Clone the repository from GitHub quietly (i.e., without logging the process in the console) and discard any other output.
-        git clone --quiet git@github.com:dx-book/environments.git > /dev/null
+        git clone --quiet $(params.environments) > /dev/null
         cd environments
 
         # Print the service metadata header.
         echo -e "\n"
         echo -e "👉🏻 Service metadata" 
-        cat applications/service-1.yaml
+        cat $(params.path)/$(params.repository).yaml
 
         # Print the shared values file
         echo -e "\n"
@@ -121,17 +121,19 @@ spec:
         # This is used as output or to share data between steps in a Tekton task.
         printf %s "$(cat shared.yaml)" >> /tekton/results/shared
 
-        # Append the content of the 'service-1.yaml' file to the '/tekton/results/service' file.
+        # Append the content of the repository metadata file to the '/tekton/results/service' file.
         # This is used as output or to share data between steps in a Tekton task.
-        printf %s "$(cat applications/service-1.yaml)" >> /tekton/results/service
+        printf %s "$(cat $(params.path)/$(params.repository).yaml)" >> /tekton/results/service
 
         curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
         echo "$(cat shared.yaml)" > shared.yaml
-        echo "$(cat applications/service-1.yaml)" > service.yaml
+        echo "$(cat $(params.path)/$(params.repository).yaml)" > service.yaml
 
         domain=$(./yq '.domain' shared.yaml)
         aws_account=$(./yq '.aws.account' shared.yaml)
         aws_region=$(./yq '.aws.region' shared.yaml)
+
+        team=$(./yq '.info.team' $(params.path)/$(params.repository).yaml)
 
         echo -n "$domain" | tee $(results.shared-domain.path)
         echo -n "$aws_account" | tee $(results.aws-account.path)
