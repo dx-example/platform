@@ -1,3 +1,4 @@
 auth
 templates/each
 templates/tasks
+templates/gene

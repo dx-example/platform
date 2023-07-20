@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: repositories
+spec:
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              filters:
+                - pathsExist:
+                    [chart/Chart.yaml, pipeline/Chart.yaml, Dockerfile]
+              github:
+                organization: {{ .Values.org }}
+                allBranches: false
+                tokenRef:
+                  secretName: github-environments
+                  key: password
+          - git:
+              repoURL: https://github.com/{{ .Values.org }}/environments.git
+              revision: main
+              files:
+                - path: "applications/{{`{{ repository }}`}}.yaml"
+  template:
+    metadata:
+      name: "{{`{{ repository }}`}}"
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        helm:
+          releaseName: "{{`{{ info.name }}`}}"
+          values: |
+            name: "{{`{{ info.name }}`}}"
+            team: "{{`{{ info.team }}`}}"
+            repo: "{{`{{ repository }}`}}"
+            chart: "{{`{{ info.chart }}`}}"
+            domain: {{ .Values.domain }}
+            version: "{{`{{ info.version }}`}}"
+            custom: {{`{{ info.custom }}`}}
+            aws:
+              account: {{ .Values.aws.account | quote }}
+              region: {{ .Values.aws.region | quote }}
+        targetRevision: "{{`{{ info.chart }}`}}"
+        chart: "{{`{{ repository }}`}}"
+        repoURL: "http://chartmuseum.platform.svc.cluster.local:8080/"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{`{{ repository }}`}}-development"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: true
+        syncOptions:
+          - Validate=true
+          - CreateNamespace=false
+          - ApplyOutOfSyncOnly=false

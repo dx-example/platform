@@ -1,1 +1,6 @@
 org: dx-book
+root: training.dx-book.com
+domain: eu-north-1.training.dx-book.com
+aws: 
+  account: "292243477487"
+  region: "us-east-1"
