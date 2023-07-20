@@ -23,10 +23,15 @@ spec:
       type: string
     - name: service
       description: Service metadata from the environments repository
+    - name: shared-domain
+      description: shared aws account
+      type: string
     - name: aws-account
       description: shared aws account
+      type: string
     - name: aws-region
       description: aws region
+      type: string
     - name: shared
       description: Shared values from the environments repository
       type: string
