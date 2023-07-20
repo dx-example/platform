@@ -50,12 +50,12 @@ spec:
         the user's home before git commands are executed. Used to authenticate
         with the git remote when performing the clone. Binding a Secret to this
         Workspace is strongly recommended over other volume types.
-    - name: messages
+    - name: source
       description: |
-        The folder where we write the message to. If no workspace
-        is provided then the message will not be written.
-      optional: true
-      mountPath: /tmp
+        The application source code files, we'll use this folder to clone the environments
+        repository, extract the metadata to provide to the application
+        and cleanup afterall
+      optional: false
   results:
     - name: previous_chart_version
       description: Version of currently applied chart
@@ -64,6 +64,7 @@ spec:
   steps:
     - name: version-bump
       image: registry.access.redhat.com/ubi8/nodejs-16
+      workingDir: $(workspaces.source.path)
       env:
         - name: WORKSPACE_SSH_DIRECTORY_PATH
           value: $(workspaces.ssh-directory.path)
@@ -83,7 +84,6 @@ spec:
         echo "👉🏻 Cloning $(params.environments)"
         ssh -T git@github.com
         git clone $(params.environments)
-        cp -R environments $(workspaces.messages.path)
 
         if [ "$(params.revision_type)" = "main" ]; then
 
@@ -131,12 +131,11 @@ spec:
 
     - name: argocd-create-application
       image: bitnami/kubectl
+      workingDir: $(workspaces.source.path)
       script: |
         #!/bin/sh
 
-        echo "PATH: $(workspaces.messages.path)"
-        ls -ls /tmp
-        ls -ls $(workspaces.messages.path)
+        ls -ls
 
         cat << EOF > application.yaml
         apiVersion: argoproj.io/v1alpha1
