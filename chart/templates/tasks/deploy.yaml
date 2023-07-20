@@ -30,6 +30,9 @@ spec:
     - name: aws-region
       description: aws region
       type: string
+    - name: team
+      description: team name
+      type: string
     - name: chart_version
       description: Application Helm Chart version
       type: string
@@ -159,9 +162,9 @@ spec:
               releaseName: $(params.application_name)-$(params.revision_type)
               values: | 
                 name: $(params.application_name)
-                team: $(./yq '.info.team' environments/$(params.path)/$(params.application_name).yaml)
-                repo: $(./yq '.info.repo' environments/$(params.path)/$(params.application_name).yaml)
-                chart: null # on purpose, as this is a branch, we do not store charts, but point the git folder instead
+                team: $(params.team)
+                repo: null
+                chart: null
                 domain: $(params.shared-domain)
                 revision: $(params.revision_type)
                 version: $(params.revision_type)
