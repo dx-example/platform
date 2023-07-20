@@ -18,6 +18,9 @@ spec:
     - name: application_name
       description: Application name
       type: string
+    - name: repository
+      description: name of the application repository
+      type: string
     - name: version
       description: Application version
       type: string
@@ -163,7 +166,7 @@ spec:
               values: | 
                 name: $(params.application_name)
                 team: $(params.team)
-                repo: $(params.application_name)
+                repo: $(params.repository)
                 chart: null
                 domain: $(params.shared-domain)
                 revision: $(params.revision_type)
