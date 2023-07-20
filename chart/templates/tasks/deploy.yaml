@@ -154,7 +154,7 @@ spec:
           namespace: argocd
         spec:
           destination:
-            namespace: $(params.org)-development
+            namespace: $(params.repository)-development
             server: https://kubernetes.default.svc
           project: default
           source:
