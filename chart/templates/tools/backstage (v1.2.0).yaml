@@ -1,0 +1,40 @@
+# ---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   labels:
+#     app.kubernetes.io/managed-by: Helm
+#   name: backstage
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   destination:
+#     namespace: {{ include "namespace" . }}
+#     server: https://kubernetes.default.svc
+#   project: default
+#   source:
+#     chart: backstage
+#     repoURL: https://backstage.github.io/charts
+#     targetRevision: 1.2.0
+#     helm:
+#       values: |
+#         backstage:
+#           appConfig:
+#             app:
+#               title: Platform
+
+#     #     kubernetes:
+#     #       ingressEndpoint:
+#     #         useDefaultPublishedService: true
+#     #     providers:
+#     #       kubernetesIngress:
+#     #         publishedService:
+#     #           enabled: true
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - Validate=true
+#       - CreateNamespace=true

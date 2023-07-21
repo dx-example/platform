@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-  name: "create-github-resources"
+  name: {{ .Values.repo }}-create-github-resources
   namespace: {{ include "argocd" . }}
   annotations:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
