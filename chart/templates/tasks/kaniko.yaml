@@ -73,6 +73,9 @@ spec:
         - --context=$(workspaces.source.path)/$(params.CONTEXT) # The user does not need to care the workspace and the source.
         - --destination=$(params.IMAGE)
         - --digest-file=$(results.IMAGE_DIGEST.path)
+        - --snapshot-mode=redo
+        - --single-snapshot
+        - --use-new-run
       volumeMounts:
         - name: aws-secret
           mountPath: /root/.aws/
