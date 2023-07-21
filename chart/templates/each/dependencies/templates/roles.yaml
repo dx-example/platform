@@ -15,20 +15,6 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: tekton-argocd-binding
-  namespace: {{ include "argocd" . }}
-subjects:
-- kind: ServiceAccount
-  name: pipeline
-  namespace: {{ .Values.repo }}-ci-cd
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tekton-argocd-role
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
   name: tekton-triggers-binding
   namespace: {{ .Values.repo }}-development
 subjects:
