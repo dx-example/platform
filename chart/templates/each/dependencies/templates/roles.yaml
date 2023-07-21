@@ -158,23 +158,9 @@ metadata:
   namespace: {{ .Values.repo }}-ci-cd
 subjects:
 - kind: ServiceAccount
-  name: tekton-triggers-sa
+  name: pipeline
   namespace: {{ .Values.repo }}-ci-cd
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: tekton-triggers-eventlistener-roles
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: triggers-eventlistener-clusterbinding
-subjects:
-- kind: ServiceAccount
-  name: tekton-triggers-sa
-  namespace: {{ .Values.repo }}-ci-cd
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: tekton-triggers-eventlistener-clusterroles
-
