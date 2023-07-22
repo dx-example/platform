@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: create-backstage-entitiy
+  name: create-backstage-entity
   namespace: tekton-tasks
 spec:
   description: |
@@ -21,7 +21,6 @@ spec:
       description: repository in github, usually environments
     - name: path
       description: entities path within the repository
-      default: entities
       default: entities
   workspaces:
     - name: ssh-directory
