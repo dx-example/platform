@@ -21,13 +21,13 @@ spec:
       description: entities path within the repository
       default: entities
   workspaces:
-      - name: ssh-directory
+    - name: ssh-directory
       optional: true
       description: |
         A .ssh directory with private key, known_hosts, config, etc. Copied to
         the user's home before git commands are executed. Used to authenticate
         with the git remote when performing the clone. Binding a Secret to this
-        Workspace is strongly recommended over other volume types.  
+        Workspace is strongly recommended over other volume types.
   steps:
     - name: create-entity
       image: registry.access.redhat.com/ubi8/nodejs-16
@@ -37,25 +37,25 @@ spec:
       script: |
         #!/bin/sh
 
-        # cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
-        # chmod 700 $HOME/.ssh
-        # chmod -R 400 $HOME/.ssh/*
-        # ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
-        # ssh -T git@github.com
-        # git clone --quiet $(params.repository)
+        cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+        chmod 700 $HOME/.ssh
+        chmod -R 400 $HOME/.ssh/*
+        ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+        ssh -T git@github.com
+        git clone --quiet $(params.repository)
 
-        # cd environments/$(params.path)
-        # cat <<EOF >> groups.yaml
-        # ---
-        # apiVersion: backstage.io/v1alpha1
-        # kind: $(params.kind)
-        # metadata:
-        #   name: $(params.name)
-        # spec:
-        #   type: $(params.type)
-        #   children: []
-        # EOF
+        cd environments/$(params.path)
+        cat <<EOF >> groups.yaml
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: $(params.kind)
+        metadata:
+          name: $(params.name)
+        spec:
+          type: $(params.type)
+          children: []
+        EOF
 
-        # git add groups.yaml
-        # git commit -m "New entity"
-        # git push origin main
+        git add groups.yaml
+        git commit -m "New entity"
+        git push origin main
