@@ -67,7 +67,7 @@ spec:
 
         cd environments/$(params.path)
 
-        if ! grep -Pzq "$entity" groups.yaml; then
+        if ! awk -v s="$entity" 'BEGIN{ r=index($0, s) } END{ exit !r }' groups.yaml; then
           echo "$entity" >> groups.yaml
           git add groups.yaml
           git commit -m "New entity"
