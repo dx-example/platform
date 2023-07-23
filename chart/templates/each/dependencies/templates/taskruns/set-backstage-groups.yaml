@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-  name: set-backstage-groups
+  name: "set-backstage-groups"
   namespace: {{ .Values.repo }}-development
     annotations:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
