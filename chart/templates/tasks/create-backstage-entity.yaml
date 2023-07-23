@@ -54,16 +54,13 @@ spec:
         git config --global user.name "Platform via TaskRun"
 
         # Define a multi-line string named 'entity', with multiple placeholders for parameters to be substituted
-        entity="
-        ---
-        apiVersion: backstage.io/v1alpha1
+        entity="apiVersion: backstage.io/v1alpha1
         kind: $(params.kind)
         metadata:
           name: $(params.name)
         spec:
           type: $(params.type)
-          children: []
-        "
+          children: []"
 
         # Remove the leading newline character in 'entity'
         entity="${entity/\\n/}"
