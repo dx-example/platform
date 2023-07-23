@@ -72,7 +72,7 @@ spec:
         cd environments/$(params.path)
 
         # If the exact content of 'entity' is NOT found in the 'groups.yaml' file
-        if ! grep -Fxq "$entity" groups.yaml; then
+        if ! grep -zFxq "$entity" groups.yaml; then
           # Append the content of 'entity' to the end of 'groups.yaml'
           echo "$entity" >> groups.yaml
           # Stage the changes in 'groups.yaml' for a commit
