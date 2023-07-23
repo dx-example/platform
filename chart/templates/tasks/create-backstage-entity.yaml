@@ -39,12 +39,20 @@ spec:
       script: |
         #!/bin/sh
 
+        if [ "$(workspaces.ssh-directory.bound)" = false ] ; then
+          echo "Not bound: ssh-directory"
+          exit 0;
+        fi
+
         cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
         chmod 700 $HOME/.ssh
         chmod -R 400 $HOME/.ssh/*
         ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
         ssh -T git@github.com
         git clone --quiet $(params.repository)
+
+        git config --global user.email "taskrun@platform"
+        git config --global user.name "Platform via TaskRun"
 
         cd environments/$(params.path)
         cat <<EOF >> groups.yaml
