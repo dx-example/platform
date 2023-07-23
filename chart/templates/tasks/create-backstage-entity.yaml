@@ -54,8 +54,7 @@ spec:
         git config --global user.email "taskrun@platform"
         git config --global user.name "Platform via TaskRun"
 
-        cd environments/$(params.path)
-        cat <<EOF >> groups.yaml
+        entity="
         ---
         apiVersion: backstage.io/v1alpha1
         kind: $(params.kind)
@@ -64,8 +63,15 @@ spec:
         spec:
           type: $(params.type)
           children: []
-        EOF
+        "
 
-        git add groups.yaml
-        git commit -m "New entity"
-        git push origin main
+        cd environments/$(params.path)
+
+        if ! grep -Pzq "$entity" groups.yaml; then
+          echo "$entity" >> groups.yaml
+          git add groups.yaml
+          git commit -m "New entity"
+          git push origin main
+        else
+          echo "Entity $(params.kind)/$(params.name) already exists"
+        fi
