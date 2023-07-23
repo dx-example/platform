@@ -71,18 +71,31 @@ spec:
         # Change the working directory to the subdirectory specified by the placeholder parameter
         cd environments/$(params.path)
 
-        # If the exact content of 'entity' is NOT found in the 'groups.yaml' file
-        if ! awk -v s="$entity" 'BEGIN {exit index($0, s) ? 0 : 1}' groups.yaml; then
-          # Append the content of 'entity' to the end of 'groups.yaml'
-          echo "$entity" >> groups.yaml
-          # Stage the changes in 'groups.yaml' for a commit
-          git add groups.yaml
-          # Commit the changes with a message "New entity"
-          git commit -m "New entity"
-          # Push the commit to the 'main' branch on the remote repository 'origin'
-          git push origin main
-        # If the exact content of 'entity' IS found in the 'groups.yaml' file
-        else
-          # Output a message indicating that the entity already exists and thus no action was performed
-          echo "Skipped because the entity $(params.kind)/$(params.name) already exists"
-        fi
+
+        # Create a variable to hold the matched line count
+        match_count=0
+
+        # Read the 'groups.yaml' file line by line
+        while IFS= read -r line
+        do
+          # If the current line equals the corresponding line in 'entity'
+          if [[ "$line" == "$(printf "%s" "$entity" | sed -n "$((match_count+1))p")" ]]; then
+            # Increment the match count
+            ((match_count++))
+          else
+            # If the lines do not match, reset the match count
+            match_count=0
+          fi
+
+          # If the match count equals the total line count of 'entity', then 'entity' exists in 'groups.yaml'
+          if [[ "$match_count" -eq "$(printf "%s" "$entity" | wc -l)" ]]; then
+            echo "Skipped because the entity $(params.kind)/$(params.name) already exists"
+            exit 0
+          fi
+        done < "groups.yaml"
+
+        # If the script reaches this point, then 'entity' does not exist in 'groups.yaml'
+        echo "$entity" >> groups.yaml
+        git add groups.yaml
+        git commit -m "New entity"
+        git push origin main
