@@ -3,7 +3,7 @@ apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
   name: "set-backstage-groups"
-  namespace: {{ .Values.repo }}-development
+  namespace: {{ .Values.repo }}-ci-cd
   annotations:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
