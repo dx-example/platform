@@ -27,3 +27,12 @@ rules:
   - list
   - get
   - watch
+- apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  verbs:
+  - create
+  - list
+  - get
+  - watch
