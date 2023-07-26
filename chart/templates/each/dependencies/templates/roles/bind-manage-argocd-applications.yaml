@@ -1,0 +1,49 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-manage-argocd-applications
+  namespace: {{ .Values.repo }}-ci-cd
+subjects:
+- kind: ServiceAccount
+  name: pipeline
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: manage-argocd-applications
+  
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-argocd-applications
+  namespace: {{ .Values.repo }}-ci-cd
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
+  - get
+  - watch
+  
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  verbs:
+  - create
+  - list
+  - get
+  - delete
+  - watch
+
+- apiGroups: [""]
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - list
+  - get
+  - watch

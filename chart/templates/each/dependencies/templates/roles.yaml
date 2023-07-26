@@ -1,103 +1,105 @@
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tekton-triggers-binding
-  namespace: {{ .Values.repo }}-ci-cd
-subjects:
-- kind: ServiceAccount
-  name: pipeline
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tekton-triggers-role
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tekton-triggers-binding
-  namespace: {{ .Values.repo }}-development
-subjects:
-- kind: ServiceAccount
-  name: pipeline
-  namespace: {{ .Values.repo }}-ci-cd
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tekton-triggers-role
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: tekton-triggers-binding
+#   namespace: {{ .Values.repo }}-ci-cd
+# subjects:
+# - kind: ServiceAccount
+#   name: pipeline
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: Role
+#   name: tekton-triggers-role
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: tekton-triggers-binding
+#   namespace: {{ .Values.repo }}-development
+# subjects:
+# - kind: ServiceAccount
+#   name: pipeline
+#   namespace: {{ .Values.repo }}-ci-cd
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: Role
+#   name: tekton-triggers-role
 
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: tekton-triggers-role
-  namespace: {{ .Values.repo }}-ci-cd
-rules:
-- apiGroups:
-  - triggers.tekton.dev
-  resources:
-  - "*"
-  verbs:
-  - create
-  - list
-  - get
-  - watch
-  
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - list
-  - get
-  - watch
-  
-- apiGroups:
-  - argoproj.io
-  resources:
-  - applications
-  verbs:
-  - create
-  - list
-  - get
-  - delete
-  - watch
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: tekton-triggers-role
+#   namespace: {{ .Values.repo }}-ci-cd
+# rules:
+# - apiGroups:
+#   - triggers.tekton.dev
+#   resources:
+#   - "*"
+#   verbs:
+#   - create
+#   - list
+#   - get
+#   - watch
 
-- apiGroups: [""]
-  resources:
-  - secrets
-  - configmaps
-  verbs:
-  - list
-  - get
-  - watch
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: tekton-triggers-role
-  namespace:  {{ .Values.repo }}-development
-rules:
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - list
-  - get
-  - watch
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: triggers-eventlistener-binding
-  namespace: {{ .Values.repo }}-ci-cd
-subjects:
-- kind: ServiceAccount
-  name: pipeline
-  namespace: {{ .Values.repo }}-ci-cd
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: tekton-triggers-eventlistener-roles
+# - apiGroups:
+#   - apps
+#   resources:
+#   - deployments
+#   verbs:
+#   - list
+#   - get
+#   - watch
+
+# - apiGroups:
+#   - argoproj.io
+#   resources:
+#   - applications
+#   verbs:
+#   - create
+#   - list
+#   - get
+#   - delete
+#   - watch
+
+# - apiGroups: [""]
+#   resources:
+#   - secrets
+#   - configmaps
+#   verbs:
+#   - list
+#   - get
+#   - watch
+
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: tekton-triggers-role
+#   namespace:  {{ .Values.repo }}-development
+# rules:
+# - apiGroups:
+#   - apps
+#   resources:
+#   - deployments
+#   verbs:
+#   - list
+#   - get
+#   - watch
+#   - patch
+
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: triggers-eventlistener-binding
+#   namespace: {{ .Values.repo }}-ci-cd
+# subjects:
+# - kind: ServiceAccount
+#   name: pipeline
+#   namespace: {{ .Values.repo }}-ci-cd
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: tekton-triggers-eventlistener-roles
