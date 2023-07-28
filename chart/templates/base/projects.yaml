@@ -18,10 +18,10 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: teams
+  name: dependencies
   namespace: argocd
 spec:
-  description: Argo CD project for all teams
+  description: Argo CD project for all teams dependencies
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc
@@ -42,15 +42,41 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: generators
+  name: pipelines
   namespace: argocd
 spec:
-  description: ArgoCD project for the generators with permission to pull from the platform repo and the chart museum only
+  description: Argo CD project for all teams pipelines
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc
   sourceRepos:
-    - "*"
-  clusterResourceWhitelist:
-    - group: "*"
-      kind: "*"
+    - "https://github.com/dx-book/*"
+    - "http://chartmuseum.platform.svc.cluster.local:8080/"
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: ""
+      kind: NetworkPolicy
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  description: Argo CD project for all teams dependencies
+  destinations:
+    - namespace: "*"
+      server: https://kubernetes.default.svc
+  sourceRepos:
+    - "https://github.com/dx-book/*"
+    - "http://chartmuseum.platform.svc.cluster.local:8080/"
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: ""
+      kind: NetworkPolicy

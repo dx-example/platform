@@ -27,7 +27,7 @@ spec:
       name: "{{`{{ repository }}`}}"
       namespace: argocd
     spec:
-      project: teams
+      project: applications
       source:
         helm:
           releaseName: "{{`{{ info.name }}`}}"
