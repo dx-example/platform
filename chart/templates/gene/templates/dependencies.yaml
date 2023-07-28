@@ -56,5 +56,5 @@ spec:
           allowEmpty: true
         syncOptions:
           - Validate=true
-          - CreateNamespace=false
+          - CreateNamespace=true
           - ApplyOutOfSyncOnly=true
