@@ -12,3 +12,17 @@ spec:
   sourceRepos:
   - 'https://github.com/dx-book/*'
   - 'http://chartmuseum.platform.svc.cluster.local:8080/'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: team-{{ .Values.team }}
+  namespace: argocd
+spec:
+  description: Argo CD project for the team {{ .Values.team }}
+  destinations:
+  - namespace: '*'
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - 'https://github.com/dx-book/*'
+  - 'http://chartmuseum.platform.svc.cluster.local:8080/'

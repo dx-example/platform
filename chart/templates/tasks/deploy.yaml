@@ -156,7 +156,7 @@ spec:
           destination:
             namespace: $(params.repository)-development
             server: https://kubernetes.default.svc
-          project: default
+          project: $(params.repository)
           source:
             path: chart
             repoURL: https://github.com/$(params.org)/$(params.application_name)
