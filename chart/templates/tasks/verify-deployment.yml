@@ -7,34 +7,27 @@ metadata:
 spec:
   description: this is a task to verify the deployment after the deployment.
   params:
+    - name: revision_type
+      description: type of branch
     - name: application_name
       description: Application name
-      type: string
-    - name: version
-      description: Application version
       type: string
     - name: repository
       description: Github repository
     - name: truncated_sha
       description: Version of currently running app
-    - name: revision_type
-      description: type of branch
-  workspaces:
-    - name: source
   steps:
     - name: verify
-      image: quay.io/openshift/origin-cli:4.8
+      image: bitnami/kubectl
       script: |
         #!/bin/sh
-        # verify the deployment by checking the version against PREVIOUS_version
         if [ "$(params.revision_type)" = "main" ]; then
-          
           until [ "$label" == "$(params.truncated_sha)" ]; do
             echo "Revision $(params.truncated_sha) hasn't started to roll out yet"
-            label=$(oc get deployment/$(params.application_name) -n $(params.repository)-development --template='{{ index .metadata.labels "app.version" }}')
+            label=$(kubectl get deployment/$(params.application_name) -n $(params.repository)-development --template='{{ index .metadata.labels "app.version" }}')
             sleep 1
           done
-          oc rollout status --timeout=2m deployment/$(params.application_name) -n $(params.repository)-development || rc1=$?
+          kubectl rollout status --timeout=2m deployment/$(params.application_name) -n $(params.repository)-development || rc1=$?
           echo "ROLLOUT_FAIL=$rc1" > rollback
         else
           echo "Skipping due to not being in main branch"
