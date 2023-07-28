@@ -200,7 +200,7 @@ spec:
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
           kubectl set env deployment/$(params.application_name) REVISION=$(params.truncated_sha) -n $(params.repository)-development
-          kubectl patch app/$(params.application_name) -n argocd --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
+          kubectl patch app/$(params.repository) -n argocd --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
           kubectl label deployment/$(params.application_name) --overwrite app.version=$(params.truncated_sha) -n $(params.repository)-development
           kubectl rollout restart deployment/$(params.application_name) -n $(params.repository)-development
         fi
