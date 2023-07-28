@@ -12,7 +12,7 @@ spec:
   destination:
     namespace: {{ include "namespace" . }}
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     chart: traefik
     repoURL: https://traefik.github.io/charts

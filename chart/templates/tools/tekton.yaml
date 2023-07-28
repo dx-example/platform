@@ -11,7 +11,7 @@ spec:
   destination:
     namespace: {{ include "namespace" . }}
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     path: catalog/tekton
     repoURL: https://github.com/{{ .Values.org }}/platform.git

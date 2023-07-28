@@ -12,7 +12,7 @@ spec:
   destination:
     namespace: {{ include "argocd" . }}
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     path: chart/templates/gene
     repoURL: https://github.com/dx-book/platform

@@ -12,7 +12,7 @@ spec:
   destination:
     namespace: {{ include "namespace" . }}
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     chart: kube-prometheus-stack
     repoURL: https://prometheus-community.github.io/helm-charts

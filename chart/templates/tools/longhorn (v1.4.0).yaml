@@ -19,7 +19,7 @@ spec:
   destination:
     namespace: longhorn-system
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     chart: longhorn
     repoURL: https://charts.longhorn.io

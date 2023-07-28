@@ -19,7 +19,7 @@ spec:
   destination:
     namespace: verdaccio
     server: https://kubernetes.default.svc
-  project: default
+  project: platform
   source:
     path: catalog/verdaccio
     repoURL: https://github.com/{{ .Values.org }}/platform.git

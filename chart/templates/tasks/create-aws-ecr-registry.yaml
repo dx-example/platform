@@ -12,7 +12,6 @@ spec:
     - name: region
       description: aws region to create the registry
       default: us-east-1
-
   steps:
     - name: create-webhook
       image: xynova/aws-kubectl:latest
