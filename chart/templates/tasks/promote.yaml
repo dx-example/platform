@@ -1,43 +1,150 @@
-# ---
-# apiVersion: tekton.dev/v1beta1
-# kind: Task
-# metadata:
-#   name: github-pull-request
-#   namespace: { { .Values.application.environments.cicd } }
-# spec:
-#   workspaces:
-#     - name: source
-#     - name: shared
-#   params:
-#     - name: revision-type
-#       description: revision type usually branch type
-#       type: string
-#     - name: revision-name
-#       description: revision name usually version or branch name
-#       type: string
-#   steps:
-#     - name: pull-request
-#       image: registry.redhat.io/rhel8/nodejs-12
-#       workingDir: /workspace/source
-#       script: |
-#         #!/bin/sh
-#         pwd
-#         ls -ls
-#         ls -ls /workspace/shared
-#         /workspace/shared/hub pull-request \
-#           --message="v$(inputs.params.revision-name)" \
-#           --message="#### v$(inputs.params.revision-name)" \
-#           --message="This is a template" \
-#           --labels=release \
-#           --base={{ .Values.pipeline.webhook.github.org }}:master \
-#           --head={{ .Values.pipeline.webhook.github.org }}:$(inputs.params.revision-type)/$(inputs.params.revision-name)
-#       env:
-#         - name: GITHUB_USER
-#           value: { { .Values.pipeline.webhook.github.user } }
-#         - name: GITHUB_TOKEN
-#           valueFrom:
-#             secretKeyRef:
-#               name: { { .Values.pipeline.webhook.github.secret } }
-#               key: password
-#       securityContext:
-#         runAsUser: 0
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: promote
+  namespace: tekton-tasks
+spec:
+  description: This task promotes an application to the next environment using GitOps
+  params:
+    - name: org
+      description: GitHub organization
+      type: string
+    - name: environments
+      description: GitOps environments repository git url
+      type: string
+    - name: path
+      description: Subpath containing the applications metadata yaml definition
+      type: string
+    - name: application_name
+      description: Application name
+      type: string
+    - name: repository
+      description: name of the application repository
+      type: string
+    - name: version
+      description: Application version
+      type: string
+    - name: metadata
+      description: metadata file from environments
+      type: string
+    - name: shared-domain
+      description: shared aws account
+      type: string
+    - name: aws-account
+      description: shared aws account
+      type: string
+    - name: aws-region
+      description: aws region
+      type: string
+    - name: team
+      description: team name
+      type: string
+    - name: chart_version
+      description: Application Helm Chart version
+      type: string
+    - name: subdirectory
+      description: Subdirectory inside the `source` Workspace
+      default: ""
+      type: string
+    - name: revision_type
+      description: type of branch
+    - name: truncated_sha
+      description: revision commit id
+    - name: git-username
+      type: string
+      description: |
+        Git user name for performing git operation.
+      default: "Tekton Pipeline"
+    - name: git-email
+      type: string
+      description: |
+        Git user email for performing git operation.
+      default: "tekton@platform"
+  workspaces:
+    - name: ssh-directory
+      optional: true
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc. Copied to
+        the user's home before git commands are executed. Used to authenticate
+        with the git remote when performing the clone. Binding a Secret to this
+        Workspace is strongly recommended over other volume types.
+    - name: source
+      description: |
+        The application source code files, we'll use this folder to clone the environments
+        repository, extract the metadata to provide to the application
+        and cleanup afterall
+  steps:
+    - name: promote
+      image: registry.access.redhat.com/ubi8/nodejs-16
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: WORKSPACE_SSH_DIRECTORY_PATH
+          value: $(workspaces.ssh-directory.path)
+      script: |
+        #!/bin/sh
+        # here we'll clone the environments repository and bump the version
+        # of the application, with the version provided by the application
+        # either in the package.json file or any other means identified by the task identify
+        # also we change the metadata file with the chart version on the Chart.yaml
+
+        if [ "$(params.revision_type)" = "main" ]; then
+          cp -R ${WORKSPACE_SSH_DIRECTORY_PATH} $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          chmod -R 400 $HOME/.ssh/*
+          ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+          
+          git clone --quiet $(params.environments)
+          cd environments
+
+          git config --global user.name "$(params.git-username)"
+          git config --global user.email "$(params.git-email)"
+          git config --global push.default simple
+
+          # define the environment to promote
+          environment=prod
+
+          # verify if folder for the environment exists, if not, create
+          if [ ! -d "$environment" ]; then
+              mkdir -p "$environment"
+          fi
+
+          ls -ls
+
+          # verify if exists already in the next stage
+          filename="$environment/$(params.application_name).yaml"
+          if [ -f "$filename" ]; then
+            echo "File $filename exists."
+          else
+            echo "$(params.metadata)" > $filename
+          fi
+
+          ls -ls
+
+          # Download yq
+          curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
+
+          previous_chart_version=$(./yq '.info.chart' $filename)
+          previous_version=$(./yq '.info.version' $filename)
+
+          echo "👉🏻 Get versions"
+          echo "Chart: $previous_chart_version"
+          echo "Application: $previous_version"
+
+          export CHART=$(params.chart_version)
+          export VERSION=$(params.version)
+          export REVISION=$(params.truncated_sha)
+          
+          echo "👉🏻 Replace old version with updated on"
+          ./yq e -i ".info.chart = env(CHART)" $filename
+          ./yq e -i ".info.version = env(VERSION)" $filename
+          ./yq e -i ".info.revision = env(REVISION)" $filename
+
+          echo -n ""
+          echo "👉🏻 Updated file"
+          cat $filename
+
+          echo -n ""
+          echo "👉🏻 Pushing"
+          git commit -am "👉🏻 Promote $(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
+          git push
+        fi
