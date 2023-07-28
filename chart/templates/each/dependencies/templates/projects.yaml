@@ -12,6 +12,16 @@ spec:
   sourceRepos:
   - 'https://github.com/dx-book/*'
   - 'http://chartmuseum.platform.svc.cluster.local:8080/'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: 'Namespace'
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: ResourceQuota
+    - group: ''
+      kind: LimitRange
+    - group: ''
+      kind: NetworkPolicy
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
