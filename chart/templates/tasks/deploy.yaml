@@ -100,16 +100,17 @@ spec:
           ssh -T git@github.com
           git clone --quiet $(params.environments)
 
-          cd environments
+          cd environments/$(params.path)
           git config --global user.name "$(params.git-username)"
           git config --global user.email "$(params.git-email)"
           git config --global push.default simple
+          filename="dev/$(params.repository).yaml"
 
           # Download yq
           curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
 
-          previous_chart_version=$(./yq '.info.chart' $(params.path)/$(params.application_name).yaml)
-          previous_version=$(./yq '.info.version' $(params.path)/$(params.application_name).yaml)
+          previous_chart_version=$(./yq '.info.chart' $filename)
+          previous_version=$(./yq '.info.version' $filename)
 
           echo "👉🏻 Get versions"
           echo "Chart: $previous_chart_version"
@@ -120,13 +121,13 @@ spec:
           export REVISION=$(params.truncated_sha)
           
           echo "👉🏻 Replace old version with updated on"
-          ./yq e -i ".info.chart = env(CHART)" $(params.path)/$(params.application_name).yaml
-          ./yq e -i ".info.version = env(VERSION)" $(params.path)/$(params.application_name).yaml
-          ./yq e -i ".info.revision = env(REVISION)" $(params.path)/$(params.application_name).yaml
+          ./yq e -i ".info.chart = env(CHART)" $filename
+          ./yq e -i ".info.version = env(VERSION)" $filename
+          ./yq e -i ".info.revision = env(REVISION)" $filename
 
           echo -n ""
           echo "👉🏻 Updated file"
-          cat $(params.path)/$(params.application_name).yaml
+          cat $filename
 
           echo -n ""
           echo "👉🏻 Pushing"
