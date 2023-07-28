@@ -99,7 +99,7 @@ spec:
           ls -ls
 
           # verify if exists already in the next stage
-          filename="$environment/$(params.application_name).yaml"
+          filename="$environment/$(params.repository).yaml"
           if [ -f "$filename" ]; then
             echo "File $filename exists."
           else
@@ -109,6 +109,6 @@ spec:
           echo -n ""
           echo "👉🏻 Pushing"
           git add $environment
-          git commit -am "👉🏻 Promote $(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
+          git commit -am "👉🏻 Promote $(params.repository) at version $(params.version) (#$(params.truncated_sha))"
           git push origin main
         fi

@@ -21,7 +21,7 @@ spec:
               repoURL: https://github.com/dx-book/environments.git
               revision: main
               files:
-                - path: "applications/{{`{{ repository }}`}}.yaml"
+                - path: "applications/dev/{{`{{ repository }}`}}.yaml"
   template:
     metadata:
       name: "{{`{{ repository }}`}}"

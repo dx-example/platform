@@ -2,3 +2,4 @@ auth
 templates/each
 templates/tasks
 templates/gene
+templates/base/cronjobs
