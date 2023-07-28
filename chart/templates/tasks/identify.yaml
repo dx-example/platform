@@ -41,6 +41,8 @@ spec:
       description: the aws region
     - name: team
       description: the team name this application belongs to
+    - name: application
+      description: the application name
   workspaces:
     - name: source
       description: Workspace where source is cloned to.
@@ -136,7 +138,9 @@ spec:
         aws_region=$(./yq '.aws.region' shared.yaml)
 
         team=$(./yq '.info.team' $(params.path)/$(params.repository).yaml)
+        application=$(./yq '.info.team' $(params.path)/$(params.repository).yaml)
         echo -n "$team" | tee $(results.team.path)
+        echo -n "$application" | tee $(results.application.path)
 
         echo -n "$domain" | tee $(results.shared-domain.path)
         echo -n "$aws_account" | tee $(results.aws-account.path)

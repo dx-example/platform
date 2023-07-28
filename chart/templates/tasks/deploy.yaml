@@ -190,6 +190,8 @@ spec:
         if [ "$(params.revision_type)" != "main" ]; then
           cat application.yaml
           kubectl apply -f application.yaml
+        else
+          echo "This is a main branch. Skipped."
         fi
 
     - name: rollout
