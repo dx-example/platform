@@ -22,7 +22,7 @@ spec:
       script: |
         #!/bin/sh
         if [ "$(params.revision_type)" = "main" ]; then
-          until [ "$label" == "$(params.truncated_sha)" ]; do
+          until [ "$label" = "$(params.truncated_sha)" ]; do
             echo "Revision $(params.truncated_sha) hasn't started to roll out yet"
             label=$(kubectl get deployment/$(params.application_name) -n $(params.repository)-development --template='{{ index .metadata.labels "app.version" }}')
             sleep 1
