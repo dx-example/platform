@@ -26,7 +26,7 @@ spec:
       name: "tkn-{{`{{ repository }}`}}"
       namespace: argocd
     spec:
-      project: "{{`{{ repository }}`}}"
+      project: teams
       source:
         helm:
           releaseName: "tkn-{{`{{ repository }}-{{ info.name }}`}}"
