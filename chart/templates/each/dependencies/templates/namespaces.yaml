@@ -9,7 +9,6 @@ kind: Namespace
 metadata:
   name: {{ .Values.repo }}-development
 ---
----
 apiVersion: v1
 kind: Namespace
 metadata:
