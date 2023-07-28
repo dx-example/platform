@@ -27,18 +27,6 @@ spec:
     - name: metadata
       description: metadata file from environments
       type: string
-    - name: shared-domain
-      description: shared aws account
-      type: string
-    - name: aws-account
-      description: shared aws account
-      type: string
-    - name: aws-region
-      description: aws region
-      type: string
-    - name: team
-      description: team name
-      type: string
     - name: chart_version
       description: Application Helm Chart version
       type: string
