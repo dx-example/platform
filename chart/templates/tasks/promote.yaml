@@ -82,7 +82,7 @@ spec:
           ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
           
           git clone --quiet $(params.environments)
-          cd environments
+          cd environments/$(params.path)
 
           git config --global user.name "$(params.git-username)"
           git config --global user.email "$(params.git-email)"
@@ -106,33 +106,9 @@ spec:
             echo "$(params.metadata)" > $filename
           fi
 
-          ls -ls
-
-          # Download yq
-          curl -Lsk https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod +x yq
-
-          previous_chart_version=$(./yq '.info.chart' $filename)
-          previous_version=$(./yq '.info.version' $filename)
-
-          echo "👉🏻 Get versions"
-          echo "Chart: $previous_chart_version"
-          echo "Application: $previous_version"
-
-          export CHART=$(params.chart_version)
-          export VERSION=$(params.version)
-          export REVISION=$(params.truncated_sha)
-          
-          echo "👉🏻 Replace old version with updated on"
-          ./yq e -i ".info.chart = env(CHART)" $filename
-          ./yq e -i ".info.version = env(VERSION)" $filename
-          ./yq e -i ".info.revision = env(REVISION)" $filename
-
-          echo -n ""
-          echo "👉🏻 Updated file"
-          cat $filename
-
           echo -n ""
           echo "👉🏻 Pushing"
+          git add $environment
           git commit -am "👉🏻 Promote $(params.application_name) at version $(params.version) (#$(params.truncated_sha))"
-          git push
+          git push origin main
         fi
