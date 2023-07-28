@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.application.name }}
   namespace: {{ .Values.project }}-ci-cd
 spec:
-  serviceAccountName: tekton-triggers-sa
+  serviceAccountName: pipeline
   triggers:
     - name: when-branch-is-deleted
       interceptors:
@@ -46,7 +46,7 @@ spec:
               metadata:
                 generateName: when-branch-is-deleted-
               spec:
-                serviceAccountName: tekton-triggers-sa
+                serviceAccountName: pipeline
                 taskSpec:
                   steps:
                   - image: quay.io/openshift/origin-cli:4.8
@@ -94,7 +94,7 @@ spec:
       spec:
         template:
           spec:
-            serviceAccountName: tekton-triggers-sa
+            serviceAccountName: pipeline
             containers:
               - resources:
                   requests:

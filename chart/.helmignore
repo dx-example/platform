@@ -3,3 +3,4 @@ templates/each
 templates/tasks
 templates/gene
 templates/base/cronjobs
+.DS_Store
