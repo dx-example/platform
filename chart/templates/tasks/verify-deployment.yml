@@ -7,27 +7,15 @@ metadata:
 spec:
   description: this is a task to verify the deployment after the deployment.
   params:
-    - name: config_repo
-      description: App-of-apps repository url
-      type: string
-      default: ssh://git@bitbucket.brreg.no:7999/ril2021/helm-charts.git
     - name: application_name
       description: Application name
       type: string
     - name: version
       description: Application version
       type: string
-    - name: chart_version
-      description: Application Helm Chart version
-      type: string
-    - name: deployment_environment
-      description: Environment that application is being deployed
-      type: string
-    - name: project_name
-      description: Project name that the application is being deployed (bitbucket organization name)
-    - name: previous_version
-      description: Version of currently running app
-    - name: previous_chart_version
+    - name: repository
+      description: Github repository
+    - name: truncated_sha
       description: Version of currently running app
     - name: revision_type
       description: type of branch
@@ -41,45 +29,45 @@ spec:
         # verify the deployment by checking the version against PREVIOUS_version
         if [ "$(params.revision_type)" = "main" ]; then
           
-          until [ "$label" == "$(params.version)" ]; do
+          until [ "$label" == "$(params.truncated_sha)" ]; do
             echo "$(params.application_name)-$(params.version) version hasn't started to roll out"
-            label=$(oc get deployment/$(params.application_name) -n $(params.project_name)-$(params.deployment_environment) --template='{{ index .metadata.labels "app.kubernetes.io/version" }}')
+            label=$(oc get deployment/$(params.application_name) -n $(params.repository)-development --template='{{ index .metadata.labels "app.version" }}')
             sleep 1
           done
-          oc rollout status --timeout=2m deployment/$(params.application_name) -n $(params.project_name)-$(params.deployment_environment) || rc1=$?
+          oc rollout status --timeout=2m deployment/$(params.application_name) -n $(params.repository)-$(params.deployment_environment) || rc1=$?
           echo "ROLLOUT_FAIL=$rc1" > rollback
         else
           echo "Skipping due to not being in main branch"
         fi
 
-    - name: patch-rollback
-      image: registry.access.redhat.com/ubi8/toolbox:8.5
-      script: |
-        #!/bin/sh
-        if [ "$(params.revision_type)" = "main" ]; then
+    # - name: patch-rollback
+    #   image: registry.access.redhat.com/ubi8/toolbox:8.5
+    #   script: |
+    #     #!/bin/sh
+    #     if [ "$(params.revision_type)" = "main" ]; then
 
-          source ./rollback
-          if [[ $ROLLOUT_FAIL != '' ]]; then
+    #       source ./rollback
+    #       if [[ $ROLLOUT_FAIL != '' ]]; then
 
-            # New commit with old version for rollback 
-            git clone $(params.config_repo) apprepo
-            git config --global user.name "Tekton Pipeline"
-            git config --global user.email "plattformteam@brreg.no"
-            git config --global push.default simple
-            cd apprepo/applications
+    #         # New commit with old version for rollback
+    #         git clone $(params.config_repo) apprepo
+    #         git config --global user.name "Tekton Pipeline"
+    #         git config --global user.email "plattformteam@brreg.no"
+    #         git config --global push.default simple
+    #         cd apprepo/applications
 
-            sed -E -i 's/version:.*/version: $(params.previous_version)/g' $(params.project_name)/$(params.application_name).yaml
-            sed -E -i 's/chart:.*/chart: $(params.previous_chart_version)/g' $(params.project_name)/$(params.application_name).yaml
-           
-            ssh-keyscan -H -p 7999 bitbucket.brreg.no >> ~/.ssh/known_hosts
-            git commit -am "Automated commit - Deployment of $(params.application_name) is reverted to version $(params.version)"
-            git push
+    #         sed -E -i 's/version:.*/version: $(params.previous_version)/g' $(params.repository)/$(params.application_name).yaml
+    #         sed -E -i 's/chart:.*/chart: $(params.previous_chart_version)/g' $(params.repository)/$(params.application_name).yaml
 
-            # TODO: Notification
-            exit $ROLLOUT_FAIL
-          else
-            echo "No rollback required 🎉🎉🎉"
-          fi
-        else
-          echo "Skipping due to not being in main branch"
-        fi
+    #         ssh-keyscan -H -p 7999 bitbucket.brreg.no >> ~/.ssh/known_hosts
+    #         git commit -am "Automated commit - Deployment of $(params.application_name) is reverted to version $(params.version)"
+    #         git push
+
+    #         # TODO: Notification
+    #         exit $ROLLOUT_FAIL
+    #       else
+    #         echo "No rollback required 🎉🎉🎉"
+    #       fi
+    #     else
+    #       echo "Skipping due to not being in main branch"
+    #     fi

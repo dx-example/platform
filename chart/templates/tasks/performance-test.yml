@@ -1,13 +1,12 @@
-# ---
 # apiVersion: tekton.dev/v1beta1
 # kind: Task
 # metadata:
 #   name: test-performance
-#   namespace: {{ .Values.application.environments.cicd }}
+#   namespace: tekton-tasks
 # spec:
 #   params:
-#     - name: ref
-#       description: Git reference
+#     - name: revision_type
+#       description: revision type, main or non main
 #     - name: repourl
 #       description: repository url from github payload
 #     - name: repofullname
@@ -15,8 +14,6 @@
 #     - name: revision
 #       description: commit head unique id
 #       type: string
-#     - name: revision-type
-#       description: revision type
 #       type: string
 #     - name: revision-name
 #       description: revision name
@@ -26,6 +23,10 @@
 #       resources: {}
 #       script: |
 #         #!/bin/bash
+
+#         if [ "$(params.revision_type)" = "main" ]; then
+#             endpoint=$(oc get ingress feature-1 -n service-1-development -o jsonpath='{.spec.rules[*].host}')
+#         fi
 
 #         replace=$(inputs.params.revision-name)
 #         revisionName=${replace//./-} # replace . to /
