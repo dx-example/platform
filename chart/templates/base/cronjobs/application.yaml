@@ -12,8 +12,8 @@ spec:
   project: platform
   source:
     path: cronjobs
-    repoURL: https://github.com/moonpod/helm-charts.git
-    targetRevision: main
+    repoURL: https://github.com/dx-book/platform.git
+    targetRevision: chart/templates/base/cronjobs
     helm:
       values: |
         namespace: argocd
