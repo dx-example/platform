@@ -1,32 +1,4 @@
 # ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: RoleBinding
-# metadata:
-#   name: tekton-triggers-binding
-#   namespace: {{ .Values.repo }}-ci-cd
-# subjects:
-# - kind: ServiceAccount
-#   name: pipeline
-# roleRef:
-#   apiGroup: rbac.authorization.k8s.io
-#   kind: Role
-#   name: tekton-triggers-role
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: RoleBinding
-# metadata:
-#   name: tekton-triggers-binding
-#   namespace: {{ .Values.repo }}-development
-# subjects:
-# - kind: ServiceAccount
-#   name: pipeline
-#   namespace: {{ .Values.repo }}-ci-cd
-# roleRef:
-#   apiGroup: rbac.authorization.k8s.io
-#   kind: Role
-#   name: tekton-triggers-role
-
-# ---
 # kind: Role
 # apiVersion: rbac.authorization.k8s.io/v1
 # metadata:
@@ -72,6 +44,69 @@
 #   - get
 #   - watch
 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-pipeline-deploy-to-argocd
+  namespace: {{ .Values.repo }}-ci-cd
+subjects:
+- kind: ServiceAccount
+  name: pipeline
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pipeline-deploy-to-argocd
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: tekton-triggers-binding
+#   namespace: {{ .Values.repo }}-development
+# subjects:
+# - kind: ServiceAccount
+#   name: pipeline
+#   namespace: {{ .Values.repo }}-ci-cd
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: Role
+#   name: tekton-triggers-role
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-deploy-to-argocd
+  namespace: {{ .Values.repo }}-ci-cd
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  verbs:
+  - create
+  - list
+  - get
+  - delete
+  - watch
+
+# - apiGroups: [""]
+#   resources:
+#   - secrets
+#   - configmaps
+#   verbs:
+#   - list
+#   - get
+#   - watch
+
 # ---
 # kind: Role
 # apiVersion: rbac.authorization.k8s.io/v1
@@ -88,6 +123,10 @@
 #   - get
 #   - watch
 #   - patch
+
+
+
+
 
 # ---
 # apiVersion: rbac.authorization.k8s.io/v1
