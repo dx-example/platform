@@ -23,6 +23,7 @@ rules:
       - get
       - delete
       - watch
+      - patch
 
   - apiGroups: [""]
     resources:
