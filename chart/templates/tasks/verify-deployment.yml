@@ -27,7 +27,14 @@ spec:
             label=$(kubectl get deployment/$(params.application_name) -n $(params.repository)-development --template='{{ index .metadata.labels "app.version" }}')
             sleep 1
           done          
-          kubectl rollout status --timeout=2m deployment/$(params.application_name) -n $(params.repository)-development
+
+          kubectl rollout status --timeout=2m deployment/$(params.application_name) -n $(params.repository)-development || rc1=$?
+          if [[ $ROLLOUT_FAIL != '' ]]; then
+            echo "Rollout failed. Rollback"
+            exit $ROLLOUT_FAIL
+          else
+            echo "No rollback required 🎉🎉🎉"
+          fi
         else
           echo "Skipping due to not being in main branch"
         fi
