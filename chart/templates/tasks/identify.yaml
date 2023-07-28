@@ -113,8 +113,8 @@ spec:
 
         # Print the service metadata header.
         echo -e "\n"
-        echo -e "👉🏻 Service metadata" 
-        filename="$filename"
+        filename="$(params.path)/dev/$(params.repository).yaml"
+        echo -e "👉🏻 Service metadata $filename" 
         cat $filename
 
         # Print the shared values file
