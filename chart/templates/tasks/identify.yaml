@@ -138,7 +138,7 @@ spec:
         aws_region=$(./yq '.aws.region' shared.yaml)
 
         team=$(./yq '.info.team' $(params.path)/$(params.repository).yaml)
-        application=$(./yq '.info.team' $(params.path)/$(params.repository).yaml)
+        application=$(./yq '.info.name' $(params.path)/$(params.repository).yaml)
         echo -n "$team" | tee $(results.team.path)
         echo -n "$application" | tee $(results.application.path)
 
