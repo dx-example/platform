@@ -104,6 +104,9 @@ spec:
             echo "File $filename exists."
           else
             echo "$(params.metadata)" > $filename
+            # validate the json object in custom
+            echo "$(params.metadata)" | yq e '.info.custom |= fromjson' -
+
           fi
 
           echo -n ""
