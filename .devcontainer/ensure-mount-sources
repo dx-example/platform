@@ -5,4 +5,4 @@
 echo "Ensuring mount points exist..."
 mkdir -p "$HOME/.kube" "$HOME/.minikube"
 
-gh auth login -p https -h github.com -w --insecure-storage -s codespace
+# gh auth login -p https -h github.com -w --insecure-storage -s codespace
