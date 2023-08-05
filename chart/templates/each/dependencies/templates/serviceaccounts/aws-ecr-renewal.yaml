@@ -44,7 +44,6 @@ roleRef:
   kind: Role
   name: {{ .Values.repo }}-ecr-renew
 ---
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -53,7 +52,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.repo }}-ecr-renewal
-  namespace: {{ .Values.repo }}-ci-cd
+  namespace: {{ .Values.repo }}-development
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
