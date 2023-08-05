@@ -53,7 +53,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.repo }}-ecr-renewal
-  namespace: {{ .Values.repo }}-development
+  namespace: {{ .Values.repo }}-ci-cd
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
