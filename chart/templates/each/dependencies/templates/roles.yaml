@@ -140,19 +140,17 @@ roleRef:
   name: pipeline-manage-deployments
 
 
-
-
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: RoleBinding
-# metadata:
-#   name: triggers-eventlistener-binding
-#   namespace: {{ .Values.repo }}-ci-cd
-# subjects:
-# - kind: ServiceAccount
-#   name: pipeline
-#   namespace: {{ .Values.repo }}-ci-cd
-# roleRef:
-#   apiGroup: rbac.authorization.k8s.io
-#   kind: ClusterRole
-#   name: tekton-triggers-eventlistener-roles
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: triggers-eventlistener-binding
+  namespace: {{ .Values.repo }}-ci-cd
+subjects:
+- kind: ServiceAccount
+  name: pipeline
+  namespace: {{ .Values.repo }}-ci-cd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
