@@ -29,8 +29,10 @@ spec:
     - "https://github.com/dx-book/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
   clusterResourceWhitelist:
-    - group: "*"
-      kind: "*"
+    - group: ""
+      kind: "Namespace"
+    - group: "rbac.authorization.k8s.io"
+      kind: "ClusterRoleBinding"
   namespaceResourceBlacklist:
     - group: ""
       kind: ResourceQuota
@@ -49,9 +51,6 @@ spec:
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc
-  clusterResourceWhitelist:
-    - group: "rbac.authorization.k8s.io"
-      kind: "ClusterRoleBinding"
   sourceRepos:
     - "https://github.com/dx-book/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
