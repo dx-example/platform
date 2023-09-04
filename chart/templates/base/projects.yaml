@@ -26,7 +26,7 @@ spec:
     - namespace: "*"
       server: https://kubernetes.default.svc
   sourceRepos:
-    - "https://github.com/dx-book/*"
+    - "https://github.com/{{ .Values.org }}/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
   clusterResourceWhitelist:
     - group: ""
@@ -55,7 +55,7 @@ spec:
     - group: "rbac.authorization.k8s.io"
       kind: "ClusterRoleBinding"
   sourceRepos:
-    - "https://github.com/dx-book/*"
+    - "https://github.com/{{ .Values.org }}/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
   namespaceResourceBlacklist:
     - group: ""
@@ -76,7 +76,7 @@ spec:
     - namespace: "*"
       server: https://kubernetes.default.svc
   sourceRepos:
-    - "https://github.com/dx-book/*"
+    - "https://github.com/{{ .Values.org }}/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
   namespaceResourceBlacklist:
     - group: ""
@@ -97,7 +97,7 @@ spec:
     - namespace: "*"
       server: https://kubernetes.default.svc
   sourceRepos:
-    - "https://github.com/dx-book/*"
+    - "https://github.com/{{ .Values.org }}/*"
     - "http://chartmuseum.platform.svc.cluster.local:8080/"
   namespaceResourceBlacklist:
     - group: ""

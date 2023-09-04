@@ -9,7 +9,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: argocd.eu-north-1.training.dx-book.com
+    - host: argocd.{{ .Values.domain }}
       http:
         paths:
           - backend:
@@ -21,5 +21,5 @@ spec:
             pathType: Prefix
   tls:
     - hosts:
-        - argocd.eu-north-1.training.dx-book.com
+        - argocd.{{ .Values.domain }}
       secretName: argocd-secret
