@@ -11,13 +11,13 @@ spec:
                 - pathsExist:
                     [chart/Chart.yaml, pipeline/Chart.yaml, Dockerfile]
               github:
-                organization: dx-book
+                organization: {{ .Values.org }}
                 allBranches: false
                 tokenRef:
                   secretName: github-environments
                   key: password
           - git:
-              repoURL: https://github.com/dx-book/environments.git
+              repoURL: https://github.com/{{ .Values.org }}/environments.git
               revision: main
               files:
                 - path: "applications/dev/{{`{{ repository }}`}}.yaml"
@@ -43,7 +43,7 @@ spec:
               region: "{{ .Values.aws.region }}"
             values: |
               {{`{{ info.values }}`}}
-        repoURL: "https://github.com/dx-book/platform.git"
+        repoURL: "https://github.com/{{ .Values.org }}/platform.git"
         targetRevision: main
         path: chart/templates/each/dependencies
       destination:

@@ -15,7 +15,7 @@ spec:
   project: platform
   source:
     path: chart/templates/gene
-    repoURL: https://github.com/dx-book/platform
+    repoURL: https://github.com/{{ .Values.org }}/platform
     targetRevision: main
   syncPolicy:
     automated:
