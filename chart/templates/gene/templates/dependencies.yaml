@@ -33,7 +33,7 @@ spec:
           values: |
             domain: {{ .Values.domain }}
             root: {{ .Values.root }}
-            org: dx-book
+            org: {{ .Values.org }}
             name: "{{`{{ info.name }}`}}"
             repo: "{{`{{ repository }}`}}"
             team: "{{`{{ info.team }}`}}"
