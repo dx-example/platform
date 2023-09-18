@@ -1,6 +1,13 @@
-root: training.dx-book.com
-domain: eu-north-1.training.dx-book.com
-org: dx-book
+org: null
+root: null
+domain: null
 aws:
-  account: "292243477487"
-  region: "us-east-1"
+  account: null
+  region: null
+  secret:
+    AWS_ACCESS_KEY_ID: null
+    AWS_SECRET_ACCESS_KEY: null
+github:
+  secrets:
+    admin: null
+    repositories: null

@@ -1,12 +1,34 @@
 #!/bin/bash
 
+# This script prepares all the configuration files and install components such as argocd
+
 HELM_ARGOCD=argocd
 HELM_PLATFORM=platform-name
 PLATFORM_NS=platform
 LETSENCRYPT_EMAIL=admin@dx-book.com
 
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "You should run this command inside a GitHub Codespace"
+fi
+
+if [ -z "$AWS_ACCOUNT" ] || [ -z "$CLUSTER_NAME" ]; then
+    echo "Missing environment variables such as AWS_ACCOUNT or CLUSTER_NAME"
+fi
+
+
+# replace the already known values.yaml file using the environment variables
 yq eval -i '.org = env(GITHUB_ORG) | .domain = env(CLUSTER_NAME) | .root = env(CLUSTER_DOMAIN)' chart/values.yaml
 yq eval -i '.aws.account = env(AWS_ACCOUNT) | .aws.region = env(AWS_DEFAULT_REGION)' chart/values.yaml
+yq eval -i '.aws.secret.AWS_ACCESS_KEY_ID = env(AWS_ACCESS_KEY_ID) | .aws.secret.AWS_SECRET_ACCESS_KEY = env(AWS_SECRET_ACCESS_KEY)' chart/values.yaml
+cp -f chart/values.yaml chart/templates/gene/values.yaml
+cp -f chart/values.yaml chart/templates/each/dependencies/values.yaml
+
+# some of the variables we do not know yet, such as the github admin secret and the service repositories secret
+# so let's replace it here
+# trying to use the logged in token from the codespace
+yq eval -i '.github.secret.repositories = env(GITHUB_TOKEN)' chart/values.yaml
+
+exit 1
 
 if helm list --all-namespaces | grep -q "^$HELM_ARGOCD\s"; then
   echo -n ""
@@ -164,5 +186,3 @@ while true; do
         sleep 7
     fi
 done
-
-

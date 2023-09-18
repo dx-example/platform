@@ -45,8 +45,8 @@ spec:
               account: "{{ .Values.aws.account }}"
               region: "{{ .Values.aws.region }}"
               secret:
-                AWS_ACCESS_KEY_ID: AKIAUICYRSPXR4D73H52
-                AWS_SECRET_ACCESS_KEY: 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
+                AWS_ACCESS_KEY_ID: "{{ .Values.aws.secret.AWS_ACCESS_KEY_ID }}"
+                AWS_SECRET_ACCESS_KEY: "{{ .Values.aws.secret.AWS_SECRET_ACCESS_KEY }}"
             values: |
               {{`{{ info.values }}`}}
         repoURL: "https://github.com/{{ .Values.org }}/platform.git"
