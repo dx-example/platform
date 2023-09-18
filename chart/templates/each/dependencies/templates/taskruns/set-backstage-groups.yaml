@@ -27,7 +27,7 @@ spec:
   - name: name
     value: {{ .Values.team }}
   - name: repository
-    value: git@github.com:dx-book/environments.git
+    value: git@github.com:{{ .Values.org }}/environments.git
   - name: path
     value: entities
   - name: type

@@ -1,4 +1,12 @@
-# The values from here are being provided by the ApplicationSet/dependencies.yaml
+# Please see the generators section of the documentation
+# The values from here are being provided by the ApplicationSet from the platform/gene folder
+# Via the templates/dependencies.yaml
 # Every resource in this folder will be looped thru the discovered services
+github:
+  secret:
+    repositories: "null"
 aws:
-  region: not-used
+  region: "null"
+  secret:
+    AWS_ACCESS_KEY_ID: "null"
+    AWS_SECRET_ACCESS_KEY: "null"

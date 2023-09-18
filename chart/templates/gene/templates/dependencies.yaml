@@ -33,14 +33,20 @@ spec:
           values: |
             domain: {{ .Values.domain }}
             root: {{ .Values.root }}
-            org: dx-book
+            org: {{ .Values.org }}
             name: "{{`{{ info.name }}`}}"
             repo: "{{`{{ repository }}`}}"
             team: "{{`{{ info.team }}`}}"
             chart: "{{`{{ info.chart }}`}}"
+            github:
+              secret:
+                repositories: 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
             aws:
               account: "{{ .Values.aws.account }}"
               region: "{{ .Values.aws.region }}"
+              secret:
+                AWS_ACCESS_KEY_ID: AKIAUICYRSPXR4D73H52
+                AWS_SECRET_ACCESS_KEY: 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
             values: |
               {{`{{ info.values }}`}}
         repoURL: "https://github.com/{{ .Values.org }}/platform.git"

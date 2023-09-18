@@ -4,3 +4,7 @@ domain: eu-north-1.training.dx-book.com
 aws: 
   account: "292243477487"
   region: "us-east-1"
+github:
+  secrets:
+    admin: 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
+    repositories: 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

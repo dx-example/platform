@@ -27,16 +27,6 @@ Create chart name and version as used by the chart label.
 {{ printf "%s-development" .Chart.Name }}
 {{- end -}}
 
-{{- define "cluster_apps" -}}
-{{- print "apps.ocp-lab2.regsys.brreg.no" -}}
-{{- end -}}
-
-{{- define "nexus.helm.repository" -}}
-{{- $ns := include "namespace" . -}}
-{{- $cluster := include "cluster_apps" . -}}
-{{ printf "https://nexus-%s.%s/repository/%s/" $ns $cluster .Chart.Name }}
-{{- end -}}
-
 {{/*
 Common labels
 */}}
