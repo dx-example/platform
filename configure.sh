@@ -32,6 +32,15 @@ done
 # make sure the environment variables defined before are availble for this script
 source ~/.profile
 
+# make sure we have valid access to the cluster
+kubectl cluster-info
+# Capture the exit status
+status=$?
+if [ $status -ne 0 ]; then
+    kops export kubeconfig --admin --state $KOPS_STATE_STORE --name=$CLUSTER_NAME
+fi
+
+
 # Function to check if all applications are healthy
 all_apps_healthy() {
     # Fetch all applications and their statuses
@@ -65,12 +74,63 @@ spec:
 EOF
 }
 
-function encryptSecretsUsingKubeseal() {
+function encryptGitHubReposSecret() {
     file="templates/base/secrets/github-environments.yaml" 
-    helm template $HELM_PLATFORM chart \
-        --show-only $file \
-        --values chart/values.yaml \
-        | kubeseal --controller-name=sealed-secrets --controller-namespace=platform 
+
+    # if the file doesn't exist in the helm ignore files
+    if ! grep -q "^$file$" chart/.helmignore; then
+        helm template $HELM_PLATFORM chart \
+            --show-only $file \
+            --values chart/values.yaml 2>/dev/null \
+            | kubeseal --controller-name=sealed-secrets \
+                --controller-namespace=platform \
+                --format yaml > chart/templates/base/secrets/github-environments-encrypted.yaml
+
+        echo "Secret github-environments is now encrypted"
+        # when the secret is generated, we add the original to the helm ignore
+        # when we'll apply this chart, only the encrypted will be submited
+        # the original secret will stay here, inside your personal codespace only
+        echo "$file" >> chart/.helmignore
+    fi
+    # make sure the original secret won't go to git
+    if git ls-files --error-unmatch $file > /dev/null 2>&1; then
+        # Remove the file from Git while keeping it locally
+        git rm --cached $chart/file
+
+        # Append the file or pattern to .gitignore if not already present
+        if ! grep -q "^chart/$file$" .gitignore; then
+            echo "$file" >> .gitignore
+        fi
+    fi
+}
+
+function encryptGitHubAdminAuthSecret() {
+    file="templates/base/secrets/github-admin-auth.yaml"
+    # if the file doesn't exist in the helm ignore files
+    if ! grep -q "^$file$" chart/.helmignore; then
+        helm template $HELM_PLATFORM chart \
+            --show-only $file \
+            --values chart/values.yaml 2>/dev/null \
+            | kubeseal --controller-name=sealed-secrets \
+                --controller-namespace=platform \
+                --format yaml > chart/templates/base/secrets/github-admin-auth-encrypted.yaml
+
+        echo "Secret github-admin-auth is now encrypted"
+        # when the secret is generated, we add the original to the helm ignore
+        # when we'll apply this chart, only the encrypted will be submited
+        # the original secret will stay here, inside your personal codespace only
+        echo "$file" >> chart/.helmignore
+    fi
+    # make sure the original secret won't go to git
+    if git ls-files --error-unmatch $file > /dev/null 2>&1; then
+        # Remove the file from Git while keeping it locally
+        git rm --cached $file
+
+        # Append the file or pattern to .gitignore if not already present
+        if ! grep -q "^$file$" .gitignore; then
+            echo "$file" >> .gitignore
+        fi
+    fi
 }
 
 # validations
@@ -259,8 +319,11 @@ while true; do
                 #### almost ready to commit the platform to git to reflect in the cluster
                 #### just need to encrypt the secrets
 
-                encryptSecretsUsingKubeseal
+                encryptGitHubReposSecret
+                encryptGitHubAdminAuthSecret
 
+                # now the secrets are encrypted and written to the disk
+                # 
 
                 exit 0
 
