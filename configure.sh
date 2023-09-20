@@ -46,6 +46,33 @@ all_apps_healthy() {
     return 0
 }
 
+function applyLetsEncryptClusterIssuer() {
+    kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $LETSENCRYPT_EMAIL
+    privateKeySecretRef:
+      name: letsencrypt-production
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
+EOF
+}
+
+function encryptSecretsUsingKubeseal() {
+    file="templates/base/secrets/github-environments.yaml" 
+    helm template $HELM_PLATFORM chart \
+        --show-only $file \
+        --values chart/values.yaml \
+        | kubeseal --controller-name=sealed-secrets --controller-namespace=platform 
+}
+
 # validations
 if [ -z "$GITHUB_TOKEN" ]; then
     echo "You should run this command inside a GitHub Codespace"
@@ -134,85 +161,74 @@ while true; do
                     if [[ ! -z $RECORD_EXISTS_1 ]]; then
                         # Delete the record
                         echo -e "Route53 DNS record already exists, deleting first..."
-                        aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
-                          "Comment": "Delete record",
-                          "Changes": [{
-                          "Action": "DELETE",
-                          "ResourceRecordSet": {
-                              "Name": "'$CLUSTER_NAME'",
-                              "Type": "CNAME",
-                              "TTL": 1,
-                              "ResourceRecords": '$(echo $RECORD_EXISTS_1 | jq -c ".ResourceRecords")'
+                        aws route53 change-resource-record-sets --hosted-zone-id "${HOSTED_ZONE_ID}" --change-batch "{
+                          \"Comment\": \"Delete record\",
+                          \"Changes\": [{
+                          \"Action\": \"DELETE\",
+                          \"ResourceRecordSet\": {
+                              \"Name\": \"${CLUSTER_NAME}\",
+                              \"Type\": \"CNAME\",
+                              \"TTL\": 1,
+                              \"ResourceRecords\": $(echo "${RECORD_EXISTS_1}" | jq -c ".ResourceRecords")
                           }
                           }]
-                      }' >/dev/null 2>&1
+                      }" >/dev/null 2>&1
 
                         echo -e "Also deleting the *.domain"
 
                         # Delete the record for the *.domain
-                        aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch '{
-                          "Comment": "Delete record",
-                          "Changes": [{
-                          "Action": "DELETE",
-                          "ResourceRecordSet": {
-                              "Name": "'*.$CLUSTER_NAME'",
-                              "Type": "CNAME",
-                              "TTL": 1,
-                              "ResourceRecords": '$(echo $RECORD_EXISTS_1 | jq -c ".ResourceRecords")'
+                        aws route53 change-resource-record-sets --hosted-zone-id "${HOSTED_ZONE_ID}" --change-batch "{
+                          \"Comment\": \"Delete record\",
+                          \"Changes\": [{
+                          \"Action\": \"DELETE\",
+                          \"ResourceRecordSet\": {
+                              \"Name\": \"*.${CLUSTER_NAME}\",
+                              \"Type\": \"CNAME\",
+                              \"TTL\": 1,
+                              \"ResourceRecords\": $(echo "${RECORD_EXISTS_1}" | jq -c ".ResourceRecords")
                           }
                           }]
-                      }' >/dev/null 2>&1
+                      }" >/dev/null 2>&1
                     fi
 
                     # Create the record again
-                    aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "{
-                      'Comment': 'Create record',
-                      'Changes': [{
-                          'Action': 'CREATE',
-                          'ResourceRecordSet': {
-                          'Name': '$CLUSTER_NAME',
-                          'Type': 'CNAME',
-                          'TTL': 1,
-                          'ResourceRecords': [{
-                              'Value': '$LB_HOSTNAME'
+                    aws route53 change-resource-record-sets --hosted-zone-id "${HOSTED_ZONE_ID}" --change-batch "{
+                      \"Comment\": \"Create record\",
+                      \"Changes\": [{
+                          \"Action\": \"CREATE\",
+                          \"ResourceRecordSet\": {
+                          \"Name\": \"${CLUSTER_NAME}\",
+                          \"Type\": \"CNAME\",
+                          \"TTL\": 1,
+                          \"ResourceRecords\": [{
+                              \"Value\": \"${LB_HOSTNAME}\"
                           }]
                           }
                       }]
-                  }" >/dev/null 2>&1
+                    }" >/dev/null 2>&1
 
+                    echo "Creating DNS records 2"
                     # Create the record again for the *.domain
-                    aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "{
-                      'Comment': 'Create record',
-                      'Changes': [{
-                          'Action': 'CREATE',
-                          'ResourceRecordSet': {
-                          'Name': '*.$CLUSTER_NAME',
-                          'Type': 'CNAME',
-                          'TTL': 1,
-                          'ResourceRecords': [{
-                              'Value': '$LB_HOSTNAME'
-                          }]
-                          }
-                      }]
-                  }" >/dev/null 2>&1
+                    aws route53 change-resource-record-sets --hosted-zone-id "${HOSTED_ZONE_ID}" --change-batch "{
+                        \"Comment\": \"Create record\",
+                        \"Changes\": [{
+                            \"Action\": \"CREATE\",
+                            \"ResourceRecordSet\": {
+                            \"Name\": \"*.${CLUSTER_NAME}\",
+                            \"Type\": \"CNAME\",
+                            \"TTL\": 1,
+                            \"ResourceRecords\": [{
+                                \"Value\": \"${LB_HOSTNAME}\"
+                            }]
+                            }
+                        }]
+                    }" >/dev/null 2>&1
                 else
                     echo "Skipping Route53 Hostname update since it's already in sync"
                 fi
 
-                echo "apiVersion: cert-manager.io/v1
-                kind: ClusterIssuer
-                metadata:
-                  name: letsencrypt-production
-                spec:
-                  acme:
-                    server: https://acme-v02.api.letsencrypt.org/directory
-                    email: $LETSENCRYPT_EMAIL
-                    privateKeySecretRef:
-                      name: letsencrypt-production
-                    solvers:
-                    - http01:
-                        ingress:
-                          class: traefik" | kubectl apply -f -
+                # apply the cluster issuer to generate dynamic ssl certificates
+                applyLetsEncryptClusterIssuer
 
                 echo -e "\n${GREEN}Domain https://argocd.$CLUSTER_NAME should now be available (TTL 60)${NC}"
                 echo -e "${GREEN}ArgoCD admin password is: $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)${NC}"
@@ -232,10 +248,19 @@ while true; do
                 # $? is a special variable that holds the exit status of the last command executed
                 if [[ $? -ne 0 ]]; then
                     echo "Activating the generators..."
-                    helm upgrade $HELM_PLATFORM chart --set generators=true
+                    # helm upgrade $HELM_PLATFORM chart --set generators=true
                 else
                     echo "Generators are active"
                 fi
+
+
+
+                #### from here we assume the platform tools are already deployed and healthy and the generators as well
+                #### almost ready to commit the platform to git to reflect in the cluster
+                #### just need to encrypt the secrets
+
+                encryptSecretsUsingKubeseal
+
 
                 exit 0
 
