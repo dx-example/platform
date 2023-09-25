@@ -133,6 +133,13 @@ function encryptGitHubAdminAuthSecret() {
     fi
 }
 
+function cleanupSecretsFromValuesYaml() {
+    yq eval -i '.aws.secret.AWS_ACCESS_KEY_ID = null | .aws.secret.AWS_SECRET_ACCESS_KEY = null' chart/values.yaml
+    yq eval -i '.github.secrets.admin = null | .github.secrets.repositories = null' chart/values.yaml
+    cp -f chart/values.yaml chart/templates/gene/values.yaml
+    cp -f chart/values.yaml chart/templates/each/dependencies/values.yaml
+}
+
 # validations
 if [ -z "$GITHUB_TOKEN" ]; then
     echo "You should run this command inside a GitHub Codespace"
@@ -199,7 +206,7 @@ while true; do
     if [[ "$STATUS" == "deployed" ]]; then
         echo "Helm release $HELM_PLATFORM has been successfully deployed!"
 
-        echo "Waiting until the traefik load balancer is available..."
+        echo "Waiting for traefik deployment to be ready and to have an available replica..."
         while true; do
             # Get desired and available replicas
             AVAILABLE_REPLICAS=$(kubectl get deployment "traefik" -n "$PLATFORM_NS" -o=jsonpath='{.status.availableReplicas}')
@@ -207,7 +214,20 @@ while true; do
 
                 echo -e "${GREEN}Traefik is healthy!${NC}"
 
-                LB_HOSTNAME=$(kubectl get svc traefik -n platform -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+                ### The traefik deployment is healthy
+                ### Now we wait until it creates a load balancer and have a hostname available
+                while true; do
+                    LB_HOSTNAME=$(kubectl get svc traefik -n platform -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
+                    if [ -n "$LB_HOSTNAME" ]; then
+                        echo "Traefik is healthy and has a LoadBalancer attached!"
+                        break
+                    else
+                        echo -e "Waiting for traefik to have an available cluster load balancer..."
+                        sleep 15  # wait for 10 seconds before rechecking
+                    fi
+                done
+
+                ### Get the zone id from route 53
                 HOSTED_ZONE_ID=$(aws route53 list-hosted-zones | jq --arg domain "$CLUSTER_DOMAIN." '.HostedZones[] | select(.Name==$domain) | .Id | split("/")[2]' | tr -d '"')
 
                 echo "Updating the Route53 DNS records to point to $LB_HOSTNAME (Traefik Load Balancer)"
@@ -308,12 +328,10 @@ while true; do
                 # $? is a special variable that holds the exit status of the last command executed
                 if [[ $? -ne 0 ]]; then
                     echo "Activating the generators..."
-                    # helm upgrade $HELM_PLATFORM chart --set generators=true
+                    helm upgrade $HELM_PLATFORM chart --set generators=true
                 else
                     echo "Generators are active"
                 fi
-
-
 
                 #### from here we assume the platform tools are already deployed and healthy and the generators as well
                 #### almost ready to commit the platform to git to reflect in the cluster
@@ -322,9 +340,10 @@ while true; do
                 encryptGitHubReposSecret
                 encryptGitHubAdminAuthSecret
 
-                # now the secrets are encrypted and written to the disk
-                # 
-
+                ### here we remove the secrets from the values.yaml we used before
+                ### now they are encrypted and can safely be added to the github repository
+                cleanupSecretsFromValuesYaml
+                
                 exit 0
 
             else
