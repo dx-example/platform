@@ -1,1 +1,2 @@
 .DS_Store
+chart/templates/each/dependencies/templates/secrets/aws-dev.yaml

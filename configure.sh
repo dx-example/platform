@@ -137,10 +137,13 @@ function encryptAWSEcrSecrets() {
 
     path="templates/secrets"
     file="aws-dev.yaml"
+    dest="chart/templates/each/dependencies/$path/aws-dev-encrypted.yaml"
 
     # if the file doesn't exist in the helm ignore files
+    # which is where we store if the secret was already encrypted or not
     if ! grep -q "^$file$" chart/.helmignore; then
         cd chart/templates/each/dependencies || return
+
         helm template dependencies . \
             --show-only $path/$file \
             --values values.yaml 2>/dev/null \
@@ -154,23 +157,27 @@ function encryptAWSEcrSecrets() {
         # when we'll apply this chart, only the encrypted will be submited
         # the original secret will stay here, inside your personal codespace only
         cd ../../../../
-        pwd
-        # echo "$file" >> chart/.helmignore
-        yq eval '.metadata.namespace = "{{ .Values.repo }}-development"' chart/templates/each/dependencies/$path/aws-dev-encrypted.yaml -i
-        ## TODO: here to replace the namespace variable
+
+        # kubeseal adds a --- separator and we need to clean it
+        # we update the namespace to the namespace variable again
+        sed -i '/^---$/d' $dest
+        echo "$path/$file" >> chart/.helmignore
+        yq eval '.metadata.namespace = "{{ .Values.repo }}-development"' $dest -i
+        yq eval '.spec.template.metadata.namespace = "{{ .Values.repo }}-development"' $dest -i
         
     fi
-#   # make sure the original secret won't go to git
-#   if git ls-files --error-unmatch $file > /dev/null 2>&1; then
-#       # Remove the file from Git while keeping it locally
-#       git rm --cached $file
 
-#       # Append the file or pattern to .gitignore if not already present
-#       if ! grep -q "^$file$" .gitignore; then
-#           echo "$file" >> .gitignore
-#       fi
-#   fi
-
+    # make sure the original secret won't go to git
+    fullpath=chart/templates/each/dependencies/$path/$file
+    if git ls-files --error-unmatch $fullpath > /dev/null 2>&1; then
+        # Remove the file from Git while keeping it locally
+        git rm --cached $fullpath
+        git commit -m "Removed $fullpath"
+        # Append the file or pattern to .gitignore if not already present
+        if ! grep -q "^$fullpath$" .gitignore; then
+            echo "$fullpath" >> .gitignore
+        fi
+    fi
 }
 
 function cleanupSecretsFromValuesYaml() {

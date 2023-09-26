@@ -7,3 +7,6 @@ templates/base/cronjobs
 templates/base/secrets/github-environments.yaml
 templates/base/secrets/github-admin-auth.yaml
 templates/secrets/aws-dev.yaml
+templates/secrets/aws-dev.yaml
+templates/secrets/aws-dev.yaml
+templates/secrets/aws-dev.yaml
