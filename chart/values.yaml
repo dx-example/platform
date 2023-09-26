@@ -1,9 +1,9 @@
-org: null
-root: null
-domain: null
+org: dx-example
+root: training.dx-book.com
+domain: eu-north-1.training.dx-book.com
 aws:
-  account: null
-  region: null
+  account: "292243477487"
+  region: eu-north-1
   secret:
     AWS_ACCESS_KEY_ID: null
     AWS_SECRET_ACCESS_KEY: null

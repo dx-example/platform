@@ -1,12 +1,13 @@
-# Please see the generators section of the documentation
-# The values from here are being provided by the ApplicationSet from the platform/gene folder
-# Via the templates/dependencies.yaml
-# Every resource in this folder will be looped thru the discovered services
-github:
-  secret:
-    repositories: "null"
+org: dx-example
+root: training.dx-book.com
+domain: eu-north-1.training.dx-book.com
 aws:
-  region: "null"
+  account: "292243477487"
+  region: eu-north-1
   secret:
-    AWS_ACCESS_KEY_ID: "null"
-    AWS_SECRET_ACCESS_KEY: "null"
+    AWS_ACCESS_KEY_ID: null
+    AWS_SECRET_ACCESS_KEY: null
+github:
+  secrets:
+    admin: null
+    repositories: null
