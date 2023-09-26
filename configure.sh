@@ -122,13 +122,13 @@ function encryptGitHubAdminAuthSecret() {
         echo "$file" >> chart/.helmignore
     fi
     # make sure the original secret won't go to git
-    if git ls-files --error-unmatch $file > /dev/null 2>&1; then
+    if git ls-files --error-unmatch chart/$file > /dev/null 2>&1; then
         # Remove the file from Git while keeping it locally
-        git rm --cached $file
+        git rm --cached chart/$file
 
         # Append the file or pattern to .gitignore if not already present
-        if ! grep -q "^$file$" .gitignore; then
-            echo "$file" >> .gitignore
+        if ! grep -q "^chart/$file$" .gitignore; then
+            echo "chart/$file" >> .gitignore
         fi
     fi
 }
