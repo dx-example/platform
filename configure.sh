@@ -135,7 +135,7 @@ function encryptAWSEcrSecrets() {
 
     # if the file doesn't exist in the helm ignore files
     # which is where we store if the secret was already encrypted or not
-    if ! grep -q "^$file$" chart/.helmignore; then
+    if ! grep -q "^$path/$file$" chart/.helmignore; then
         cd chart/templates/each/dependencies || return
 
         helm template dependencies . \
@@ -193,6 +193,7 @@ cp -f chart/values.yaml chart/templates/each/dependencies/values.yaml
 # some of the variables we do not know yet, such as the github admin secret and the service repositories secret
 # so let's replace it here
 # trying to use the logged in token from the codespace
+yq eval -i '.github.secrets.admin = env(TOKEN)' chart/values.yaml
 yq eval -i '.github.secrets.repositories = env(TOKEN)' chart/values.yaml
 
 # install argocd
@@ -369,7 +370,6 @@ while true; do
                 encryptGitHubReposSecret
                 encryptGitHubAdminAuthSecret
                 encryptAWSEcrSecrets
-
 
                 ### here we remove the secrets from the values.yaml we used before
                 ### now they are encrypted and can safely be added to the github repository
