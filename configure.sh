@@ -120,16 +120,10 @@ function encryptGitHubAdminAuthSecret() {
         # when we'll apply this chart, only the encrypted will be submited
         # the original secret will stay here, inside your personal codespace only
         echo "$file" >> chart/.helmignore
-    fi
-    # make sure the original secret won't go to git
-    if git ls-files --error-unmatch chart/$file > /dev/null 2>&1; then
-        # Remove the file from Git while keeping it locally
-        git rm --cached chart/$file
 
-        # Append the file or pattern to .gitignore if not already present
-        if ! grep -q "^chart/$file$" .gitignore; then
-            echo "chart/$file" >> .gitignore
-        fi
+        # make a backup of the original file
+        # note the .bkp extension is ignored by .gitignore
+        mv chart/$file chart/$file.bkp
     fi
 }
 
@@ -162,21 +156,9 @@ function encryptAWSEcrSecrets() {
         # we update the namespace to the namespace variable again
         sed -i '/^---$/d' $dest
         echo "$path/$file" >> chart/.helmignore
+        mv chart/templates/each/dependencies/$path/$file chart/templates/each/dependencies/$path/$file.bkp
         yq eval '.metadata.namespace = "{{ .Values.repo }}-development"' $dest -i
         yq eval '.spec.template.metadata.namespace = "{{ .Values.repo }}-development"' $dest -i
-        
-    fi
-
-    # make sure the original secret won't go to git
-    fullpath=chart/templates/each/dependencies/$path/$file
-    if git ls-files --error-unmatch $fullpath > /dev/null 2>&1; then
-        # Remove the file from Git while keeping it locally
-        git rm --cached $fullpath
-        git commit -m "Removed $fullpath"
-        # Append the file or pattern to .gitignore if not already present
-        if ! grep -q "^$fullpath$" .gitignore; then
-            echo "$fullpath" >> .gitignore
-        fi
     fi
 }
 
