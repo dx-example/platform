@@ -6,3 +6,4 @@ templates/base/cronjobs
 .DS_Store
 templates/base/secrets/github-environments.yaml
 templates/base/secrets/github-admin-auth.yaml
+templates/secrets/aws-dev.yaml
