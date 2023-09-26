@@ -133,6 +133,46 @@ function encryptGitHubAdminAuthSecret() {
     fi
 }
 
+function encryptAWSEcrSecrets() {
+
+    path="templates/secrets"
+    file="aws-dev.yaml"
+
+    # if the file doesn't exist in the helm ignore files
+    if ! grep -q "^$file$" chart/.helmignore; then
+        cd chart/templates/each/dependencies || return
+        helm template dependencies . \
+            --show-only $path/$file \
+            --values values.yaml 2>/dev/null \
+            | kubeseal --controller-name=sealed-secrets \
+                --controller-namespace=platform \
+                --scope=cluster-wide \
+                --format yaml > $path/aws-dev-encrypted.yaml
+
+        echo "Secret $file is now encrypted"
+        # when the secret is generated, we add the original to the helm ignore
+        # when we'll apply this chart, only the encrypted will be submited
+        # the original secret will stay here, inside your personal codespace only
+        cd ../../../../
+        pwd
+        # echo "$file" >> chart/.helmignore
+        yq eval '.metadata.namespace = "{{ .Values.repo }}-development"' chart/templates/each/dependencies/$path/aws-dev-encrypted.yaml -i
+        ## TODO: here to replace the namespace variable
+        
+    fi
+#   # make sure the original secret won't go to git
+#   if git ls-files --error-unmatch $file > /dev/null 2>&1; then
+#       # Remove the file from Git while keeping it locally
+#       git rm --cached $file
+
+#       # Append the file or pattern to .gitignore if not already present
+#       if ! grep -q "^$file$" .gitignore; then
+#           echo "$file" >> .gitignore
+#       fi
+#   fi
+
+}
+
 function cleanupSecretsFromValuesYaml() {
     yq eval -i '.aws.secret.AWS_ACCESS_KEY_ID = null | .aws.secret.AWS_SECRET_ACCESS_KEY = null' chart/values.yaml
     yq eval -i '.github.secrets.admin = null | .github.secrets.repositories = null' chart/values.yaml
@@ -156,7 +196,7 @@ fi
 
 # replace the already known values.yaml file using the environment variables
 yq eval -i '.org = env(GITHUB_ORG) | .domain = env(CLUSTER_NAME) | .root = env(CLUSTER_DOMAIN)' chart/values.yaml
-yq eval -i '.aws.account = env(AWS_ACCOUNT) | .aws.region = env(AWS_DEFAULT_REGION)' chart/values.yaml
+yq eval -i '.aws.account = env(AWS_ACCOUNT) | .aws.account style="double" | .aws.region = env(AWS_DEFAULT_REGION)' chart/values.yaml
 yq eval -i '.aws.secret.AWS_ACCESS_KEY_ID = env(AWS_ACCESS_KEY_ID) | .aws.secret.AWS_SECRET_ACCESS_KEY = env(AWS_SECRET_ACCESS_KEY)' chart/values.yaml
 cp -f chart/values.yaml chart/templates/gene/values.yaml
 cp -f chart/values.yaml chart/templates/each/dependencies/values.yaml
@@ -316,19 +356,19 @@ while true; do
                 sleep 2
 
                 # Wait loop
-                echo -e "\nVerifying ArgoCD applications status.."
-                while ! all_apps_healthy; do
-                    echo "Waiting for all ArgoCD applications to be healthy..."
-                    sleep 10 # Wait for 10 seconds before rechecking
-                done
-                echo "All ArgoCD applications are healthy!"
+                # echo -e "\nVerifying ArgoCD applications status.."
+                # while ! all_apps_healthy; do
+                #     echo "Waiting for all ArgoCD applications to be healthy..."
+                #     sleep 10 # Wait for 10 seconds before rechecking
+                # done
+                # echo "All ArgoCD applications are healthy!"
 
                 # verify if generators is already deployed or not
                 kubectl get applications/generators -n argocd &>/dev/null
                 # $? is a special variable that holds the exit status of the last command executed
                 if [[ $? -ne 0 ]]; then
                     echo "Activating the generators..."
-                    helm upgrade $HELM_PLATFORM chart --set generators=true
+                    # helm upgrade $HELM_PLATFORM chart --set generators=true
                 else
                     echo "Generators are active"
                 fi
@@ -339,6 +379,8 @@ while true; do
 
                 encryptGitHubReposSecret
                 encryptGitHubAdminAuthSecret
+                encryptAWSEcrSecrets
+
 
                 ### here we remove the secrets from the values.yaml we used before
                 ### now they are encrypted and can safely be added to the github repository
