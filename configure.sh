@@ -120,10 +120,12 @@ function encryptGitHubAdminAuthSecret() {
         # when we'll apply this chart, only the encrypted will be submited
         # the original secret will stay here, inside your personal codespace only
         echo "$file" >> chart/.helmignore
-
         # make a backup of the original file
         # note the .bkp extension is ignored by .gitignore
         mv chart/$file chart/$file.bkp
+
+        # remove the extra --- the kubeseal adds
+        sed -i '/^---$/d' chart/templates/base/secrets/github-admin-auth-encrypted.yaml
     fi
 }
 
